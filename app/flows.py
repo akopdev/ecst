@@ -1,23 +1,23 @@
 import asyncio
 
-from prefect import flow, get_run_logger
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from .tasks import fetch, save
 from .database import storage
+from . import api
+
+scheduler = AsyncIOScheduler()
 
 
-@flow(
-    name="Fetch upcomming events",
-    description="Fetch future event",
-    retries=3,
-    retry_delay_seconds=5 * 60,
-)
+@scheduler.scheduled_job("interval", seconds=5)
 async def upcoming():
-    events = await fetch()
+    """Fetch upcoming events from remote server"""
+    events = await api.fetch()
     if events:
         for event in events:
-            await save(storage, event)
+            await api.save(storage, event)
 
+
+scheduler.start()
 
 if __name__ == "__main__":
-    asyncio.run(upcoming())
+    asyncio.get_event_loop().run_forever()

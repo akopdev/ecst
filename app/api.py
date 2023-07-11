@@ -3,12 +3,10 @@ from typing import List, Optional
 
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
-from prefect import task
 
 from . import enums, schemas
 
 
-@task
 async def fetch(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
@@ -43,7 +41,6 @@ async def fetch(
     return events
 
 
-@task
 async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
     payload = {
         "$set": {
@@ -73,7 +70,7 @@ async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
             "forecast": event.forecast,
         }
 
-    res = await storage.update_one(
+    res = await storage.events.update_one(
         {"title": event.title, "indicator": event.indicator, "country": event.country},
         payload,
         upsert=True,

@@ -1,5 +1,6 @@
 aiohttp
-gunicorn
 motor
-pydantic
-prefect
+fastapi
+apscheduler
+uvicorn
+pydantic-settings
