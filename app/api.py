@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -50,6 +50,7 @@ async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
             "unit": event.unit,
             "scale": event.scale,
             "ticker": event.ticker,
+            "type": event.type,
             "updated_at": datetime.now(),
         },
         "$addToSet": {
@@ -61,7 +62,7 @@ async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
             }
         },
     }
-    # If we don't have an actual data then just update schedule info
+    # If we don"t have an actual data then just update schedule info
     if not event.actual:
         del payload["$addToSet"]
         payload["$set"]["next"] = {
@@ -77,3 +78,19 @@ async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
     )
 
     return bool(res.modified_count)
+
+
+async def get_date_ranges(storage: AsyncIOMotorClient) -> Dict[str, datetime]:
+    pipeline = [
+        {"$match": {"actual": "", "type": enums.EventType.INDICATOR.value}},
+        {
+            "$group": {
+                "_id": {"title": "$title", "indicator": "$indicator", "country": "$country"},
+                "start": {"$max": "$date"},
+                "end": {"$min": "$date"},
+            }
+        },
+    ]
+    print(pipeline)
+    async for doc in storage.events.aggregate(pipeline):
+        print(doc)

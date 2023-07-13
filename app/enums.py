@@ -37,3 +37,8 @@ class Importance(int, Enum):
     LOW = -1
     MEDIUM = 0
     HIGH = 1
+
+
+class EventType(str, Enum):
+    INDICATOR = "indicator"
+    EVENT = "event"

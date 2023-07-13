@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, validator
 
-from .enums import Country, Currency, Importance
+from .enums import Country, Currency, EventType, Importance
 
 
 class Event(BaseModel):
@@ -21,8 +21,17 @@ class Event(BaseModel):
     source: str
     ticker: Optional[str] = None
     title: str
+    type: EventType = None
     unit: Optional[str] = None
 
     @validator("date")
-    def datetime_to_string(cls, v):
+    def format_date(cls, v):
         return v.isoformat()
+
+    @validator("type", pre=True, always=True)
+    def define_type(cls, v, *, values: Dict[str, Any]):
+        return v or (
+            EventType.INDICATOR
+            if values["previous"] is not None or values["forecast"] is not None
+            else EventType.EVENT
+        )
