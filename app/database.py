@@ -1,7 +1,15 @@
 from motor.motor_asyncio import AsyncIOMotorClient
+
 from .settings import settings
 
-client = AsyncIOMotorClient(settings.DATABASE_DSL)
+
+def connect():
+    client = AsyncIOMotorClient(settings.DATABASE_DSL)
+
+    if not client or not client.server_info():
+        raise Exception("Failed to connect to storage.")
+    return client[settings.DATABASE_NAME]
+
 
 # store data in `events` collections
-storage = client[settings.DATABASE_NAME]
+storage = connect()

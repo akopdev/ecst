@@ -5,6 +5,7 @@ import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from . import enums, schemas
+from .logger import log
 
 
 async def fetch(
@@ -17,6 +18,8 @@ async def fetch(
         start = datetime.utcnow() - timedelta(days=1)
     if not end:
         end = datetime.utcnow() + timedelta(days=90)
+
+    log.info(f"Fetching data from server for date range '{start:%d.%m.%Y}' to '{end:%d.%m.%Y}'...")
     async with aiohttp.ClientSession() as session:
         async with session.get(
             "https://economic-calendar.tradingview.com/events",
@@ -28,6 +31,7 @@ async def fetch(
         ) as resp:
             res = await resp.json()
             if res["status"] == "ok" and res["result"]:
+                log.info(f"{len(res['result'])} new events found")
                 for result in res["result"]:
                     if result["date"]:
                         result["date"] = datetime.fromisoformat(
@@ -41,7 +45,7 @@ async def fetch(
     return events
 
 
-async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
+async def save(storage, event: schemas.Event) -> bool:
     payload = {
         "$set": {
             "currency": event.currency,
@@ -62,35 +66,43 @@ async def save(storage: AsyncIOMotorClient, event: schemas.Event) -> bool:
             }
         },
     }
-    # If we don"t have an actual data then just update schedule info
-    if not event.actual:
-        del payload["$addToSet"]
-        payload["$set"]["next"] = {
-            "date": event.date,
-            "period": event.period,
-            "forecast": event.forecast,
-        }
-
-    res = await storage.events.update_one(
-        {"title": event.title, "indicator": event.indicator, "country": event.country},
-        payload,
-        upsert=True,
-    )
-
-    return bool(res.modified_count)
+    log.info("Saving event into data storage ...")
+    try:
+        res = await storage.events.update_one(
+            {"title": event.title, "indicator": event.indicator, "country": event.country},
+            payload,
+            upsert=True,
+        )
+    except Exception as e:
+        log.error("Error while updating storage record: {}".format(str(e)))
+        return False
+    log.info(f"Matched {res.matched_count} documents and modified {res.modified_count} documents")
+    return True
 
 
-async def get_date_ranges(storage: AsyncIOMotorClient) -> Dict[str, datetime]:
+async def get_date_ranges(storage: AsyncIOMotorClient) -> Optional[Dict[str, datetime]]:
     pipeline = [
-        {"$match": {"actual": "", "type": enums.EventType.INDICATOR.value}},
+        {"$unwind": "$data"},
+        {"$match": {"data.actual": None, "type": enums.EventType.INDICATOR.value}},
         {
             "$group": {
-                "_id": {"title": "$title", "indicator": "$indicator", "country": "$country"},
-                "start": {"$max": "$date"},
-                "end": {"$min": "$date"},
+                "_id": None,
+                "start": {"$min": "$data.date"},
+                "end": {"$max": "$data.date"},
             }
         },
     ]
-    print(pipeline)
-    async for doc in storage.events.aggregate(pipeline):
-        print(doc)
+    try:
+        res = await storage.events.aggregate(pipeline).to_list(length=1)
+    except Exception as e:
+        log.error("Error while fetching indicators to update: {}".format(str(e)))
+        return None
+
+    return (
+        None
+        if not res[0]
+        else {
+            "start": res[0]["start"],
+            "end": res[0]["end"],
+        }
+    )

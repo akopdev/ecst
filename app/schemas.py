@@ -6,6 +6,11 @@ from pydantic import BaseModel, validator
 from .enums import Country, Currency, EventType, Importance
 
 
+class EventDateRange(BaseModel):
+    start: datetime
+    end: datetime
+
+
 class Event(BaseModel):
     actual: Optional[float] = None
     country: Country
@@ -23,10 +28,6 @@ class Event(BaseModel):
     title: str
     type: EventType = None
     unit: Optional[str] = None
-
-    @validator("date")
-    def format_date(cls, v):
-        return v.isoformat()
 
     @validator("type", pre=True, always=True)
     def define_type(cls, v, *, values: Dict[str, Any]):

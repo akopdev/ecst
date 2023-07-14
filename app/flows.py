@@ -1,32 +1,31 @@
-import asyncio
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
 from . import api
-from .database import storage
+from .database import connect
+from .logger import log
 
-scheduler = AsyncIOScheduler()
 
-
-# @scheduler.scheduled_job("cron", day_of_week="mon-fri", hour=9)
-@scheduler.scheduled_job("interval", seconds=10)
 async def upcoming():
     """Fetch upcoming events from remote server"""
     events = await api.fetch()
     if events:
+        db = connect()
         for event in events:
-            if not await api.save(storage, event):
-                print("failed to save event")
-                print(event)
+            is_updated = await api.save(db, event)
+            if not is_updated:
+                log.error("Failed to store data in database.")
 
 
-@scheduler.scheduled_job("interval", seconds=10)
 async def update():
     """Update actual value for passed indicators"""
-    pending = await api.get_date_ranges(storage)
+    db = connect()
+    date_range = await api.get_date_ranges(db)
+    log.info(date_range)
+    if date_range:
+        events = await api.fetch(**date_range)
+        log.info(events)
 
-
-scheduler.start()
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_forever()
+    import asyncio
+
+    # asyncio.run(upcoming())
+    asyncio.run(update())

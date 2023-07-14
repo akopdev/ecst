@@ -1,6 +1,5 @@
 aiohttp
 motor
 fastapi
-apscheduler
 uvicorn
 pydantic-settings
