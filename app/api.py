@@ -2,18 +2,18 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 import aiohttp
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 from . import enums, schemas
 from .logger import log
 
 
 async def fetch(
+    db: Optional[AsyncIOMotorCollection] = None,
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
     countries: List[enums.Country] = [],
-) -> List[schemas.Event]:
-    events = []
+) -> bool:
     if not start:
         start = datetime.utcnow() - timedelta(days=1)
     if not end:
@@ -38,14 +38,18 @@ async def fetch(
                             result["date"].replace("Z", "+00:00")
                         )
                     try:
-                        events.append(schemas.Event(**result))
+                        event = schemas.Event(**result)
                     except Exception as e:
-                        # TODO: more accurate exception validation
-                        raise ValueError(e)
-    return events
+                        log.error("Error while parsing data: {}".format(str(e)))
+                        return False
+
+                    if not await save(db, event):
+                        log.error("Failed to store data in database.")
+                        return False
+            return True
 
 
-async def save(storage, event: schemas.Event) -> bool:
+async def save(db: AsyncIOMotorCollection, event: schemas.Event) -> bool:
     payload = {
         "$set": {
             "currency": event.currency,
@@ -68,7 +72,7 @@ async def save(storage, event: schemas.Event) -> bool:
     }
     log.info("Saving event into data storage ...")
     try:
-        res = await storage.events.update_one(
+        res = await db.events.update_one(
             {"title": event.title, "indicator": event.indicator, "country": event.country},
             payload,
             upsert=True,
@@ -80,7 +84,7 @@ async def save(storage, event: schemas.Event) -> bool:
     return True
 
 
-async def get_date_ranges(storage: AsyncIOMotorClient) -> Optional[Dict[str, datetime]]:
+async def get_date_ranges(db: AsyncIOMotorCollection) -> Optional[Dict[str, datetime]]:
     pipeline = [
         {"$unwind": "$data"},
         {"$match": {"data.actual": None, "type": enums.EventType.INDICATOR.value}},
@@ -93,7 +97,7 @@ async def get_date_ranges(storage: AsyncIOMotorClient) -> Optional[Dict[str, dat
         },
     ]
     try:
-        res = await storage.events.aggregate(pipeline).to_list(length=1)
+        res = await db.events.aggregate(pipeline).to_list(length=1)
     except Exception as e:
         log.error("Error while fetching indicators to update: {}".format(str(e)))
         return None

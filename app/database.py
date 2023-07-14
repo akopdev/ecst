@@ -1,9 +1,9 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 from .settings import settings
 
 
-def connect():
+def connect() -> AsyncIOMotorCollection:
     client = AsyncIOMotorClient(settings.DATABASE_DSL)
 
     if not client or not client.server_info():
