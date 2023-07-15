@@ -1,5 +1,4 @@
 aiohttp
 motor
-fastapi
-uvicorn
 pydantic-settings
+typer
