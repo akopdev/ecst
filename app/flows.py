@@ -1,12 +1,12 @@
+from datetime import datetime
 from functools import wraps
 
 from motor.frameworks.asyncio import asyncio
 from typer import Option, Typer
 from typing_extensions import Annotated
 
-from . import api
-from .database import connect
 from .logger import log
+from .provider import DataProvider
 
 app = Typer(no_args_is_help=True)
 
@@ -28,7 +28,8 @@ async def upcoming(
     dsn: Annotated[str, Option()],
 ):
     """Fetch upcoming events from remote server"""
-    await api.fetch(connect(dsn))
+    provider = DataProvider(dsn)
+    await provider.etl()
 
 
 @flow
@@ -36,9 +37,9 @@ async def indicators(
     dsn: Annotated[str, Option()],
 ):
     """Update actual value for passed events"""
-    db = connect(dsn)
-    date_range = await api.get_date_ranges(db)
+    provider = DataProvider(dsn)
+    date_range = await provider.get_date_ranges()
     if date_range:
-        await api.fetch(db=db, **date_range)
+        await provider.etl(**date_range)
     else:
         log.info("Nothing to update")
