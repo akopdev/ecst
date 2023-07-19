@@ -1,4 +1,3 @@
-from datetime import datetime
 from functools import wraps
 
 from motor.frameworks.asyncio import asyncio

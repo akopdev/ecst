@@ -31,8 +31,3 @@ class Currency(str, Enum):
     AUD = "AUD"
     USD = "USD"
     JPY = "JPY"
-
-
-class EventType(str, Enum):
-    INDICATOR = "indicator"
-    EVENT = "event"

@@ -3,11 +3,11 @@ from typing import List, Optional
 
 import aiohttp
 from pydantic import ValidationError
-from typing_extensions import final
 
-from .enums import Country, EventType
+from .enums import Country
 from .logger import log
-from .schemas import DataProviderResult, Event, Indicator, IndicatorData
+from .schemas import (DataProviderResult, Event, Indicator, IndicatorData,
+                      IndicatorDataTS)
 from .storage import Storage
 
 
@@ -36,17 +36,27 @@ class DataProvider(Storage):
                 res = await resp.json()
                 try:
                     events = DataProviderResult(**res).result
-                except ValidationError as e:
-                    log.error("Error while parsing data: {}".format(str(e)))
+                except ValidationError as error:
+                    log.error("Error while parsing data: {}".format(str(error)))
                     return False
                 return events
 
     def transform(self, event: Event) -> Optional[Indicator]:
-        if event.type == EventType.INDICATOR:
+        if event.actual or event.forecast:
             try:
-                e = event.dict()
-                ind = Indicator(**e)
-                ind.data = IndicatorData(**e)
+                ind = Indicator(
+                    **event.model_dump(exclude_unset=True),
+                    data=IndicatorData(
+                        actual=IndicatorDataTS(
+                            date=event.date,
+                            value=event.actual,
+                        ),
+                        forcast=IndicatorDataTS(
+                            date=event.date,
+                            value=event.forecast,
+                        ),
+                    ),
+                )
             except Exception as e:
                 log.error("Failed to transform data into indicator")
                 log.error(e)

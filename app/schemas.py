@@ -1,45 +1,67 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, validator
 
-from .enums import Country, Currency, EventType
+from .enums import Country, Currency
+
+
+class IndicatorDataTS(BaseModel):
+    """Store data as a pair of timeseries"""
+
+    date: datetime
+    value: Optional[float] = None
 
 
 class IndicatorData(BaseModel):
-    actual: Optional[float] = None
-    date: datetime
-    forecast: Optional[float] = None
-    period: Optional[str] = None
+    """Store data as a pair of timeseries"""
+
+    # actual data should always be present otherwise store it as a future event
+    actual: IndicatorDataTS
+    # there might not be consensus forcast for this indicator
+    forcast: Optional[IndicatorDataTS] = None
 
 
 class Indicator(BaseModel):
-    title: str
+    """
+    Schema for indicators to store and extract from database
+    """
+
+    data: Optional[IndicatorData] = []
+    comment: Optional[str] = None
     country: Country
-    ticker: Optional[str] = None
-    data: Optional[List[IndicatorData]] = None
-    indicator: str
     currency: Currency
+    indicator: str
+    period: Optional[str] = None
+    scale: Optional[str] = None
+    source: str
+    ticker: Optional[str] = None
+    title: str
     unit: Optional[str] = None
 
 
-class Event(Indicator, IndicatorData):
-    scale: Optional[str] = None
+class Event(BaseModel):
+    """
+    Schema that represents structure of event from TradingView API
+    """
+
+    actual: Optional[float] = None
     comment: Optional[str] = None
+    country: Country
+    currency: Currency
+    date: datetime
+    forecast: Optional[float] = None
+    indicator: str
+    period: Optional[str] = None
+    scale: Optional[str] = None
     source: str
-    type: EventType = None
+    ticker: Optional[str] = None
+    title: str
+    unit: Optional[str] = None
 
     @validator("date", pre=True, always=True)
     def fix_date(cls, v):
         return datetime.fromisoformat(v.replace("Z", "+00:00"))
-
-    @validator("type", pre=True, always=True)
-    def define_type(cls, v, *, values: Dict[str, Any]):
-        return v or (
-            EventType.INDICATOR
-            if values["actual"] is not None or values["forecast"] is not None
-            else EventType.EVENT
-        )
 
 
 class DataProviderResult(BaseModel):

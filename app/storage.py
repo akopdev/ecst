@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 from motor.motor_asyncio import (AsyncIOMotorClient, AsyncIOMotorCollection,
@@ -44,8 +44,14 @@ class Storage:
                 "unit": ind.unit,
                 "updated_at": datetime.utcnow(),
             },
-            "$addToSet": {"data": ind.data.dict()},
+            "$addToSet": {},
         }
+        if ind.data.actual.value is not None:
+            payload["$addToSet"]["data.actual"] = ind.data.actual.model_dump(exclude_unset=True)
+
+        if ind.data.forcast.value is not None:
+            payload["$addToSet"]["data.forcast"] = ind.data.forcast.model_dump(exclude_unset=True)
+
         log.info("Saving event into data storage ...")
         try:
             res = await self.db[collection].update_one(
@@ -64,14 +70,16 @@ class Storage:
     async def get_date_ranges(
         self, collection: str = "indicators"
     ) -> Optional[Dict[str, datetime]]:
+        return {"date_end": datetime.utcnow(), "date_start": datetime.utcnow() - timedelta(days=365)}
+
         pipeline = [
             {"$unwind": "$data"},
-            {"$match": {"data.actual": None}},
+            {"$match": {"data.actual.value": None}},
             {
                 "$group": {
                     "_id": None,
-                    "start": {"$min": "$data.date"},
-                    "end": {"$max": "$data.date"},
+                    "start": {"$min": "$data.actual.date"},
+                    "end": {"$max": "$data.actual.date"},
                 }
             },
         ]
@@ -83,7 +91,7 @@ class Storage:
 
         return (
             None
-            if not res[0]
+            if not res or not res[0]
             else {
                 "date_start": res[0]["start"],
                 "date_end": res[0]["end"],
