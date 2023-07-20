@@ -1,6 +1,25 @@
 from enum import Enum
 
 
+class Period(str, Enum):
+    Jan = "Jan"
+    Feb = "Feb"
+    Mar = "Mar"
+    Apr = "Apr"
+    May = "May"
+    Jun = "Jun"
+    Jul = "Jul"
+    Aug = "Aug"
+    Sep = "Sep"
+    Oct = "Oct"
+    Nov = "Nov"
+    Dec = "Dec"
+    Q1 = "Q1"
+    Q2 = "Q2"
+    Q3 = "Q3"
+    Q4 = "Q4"
+
+
 class Country(str, Enum):
     MX = "MX"
     DE = "DE"
