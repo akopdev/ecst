@@ -44,22 +44,18 @@ install:
 	$(PYTHON) piptools sync requirements.txt requirements-dev.txt
 
 # -------------------------------------------------------------------------------------------------
-# run: @ Build and launch application in development mode
-# -------------------------------------------------------------------------------------------------
-run:
-	$(PYTHON) app.flows
-
-# -------------------------------------------------------------------------------------------------
-# serve: @ Run application with production web server
-# -------------------------------------------------------------------------------------------------
-serve:
-	$(PYTHON) gunicorn app.main:app --worker-class aiohttp.GunicornWebWorker
-
-# -------------------------------------------------------------------------------------------------
 # test: @ Run tests using pytest
 # -------------------------------------------------------------------------------------------------
 test:
 	$(PYTHON) pytest tests --cov=.
+
+# -------------------------------------------------------------------------------------------------
+# format: @ Format source code and auto fix minor issues
+# -------------------------------------------------------------------------------------------------
+format:
+	$(PYTHON) black --line-length=100 app
+	$(PYTHON) isort app
+
 
 # -------------------------------------------------------------------------------------------------
 # lint: @ Checks the source code against coding standard rules and safety
@@ -72,7 +68,9 @@ lint: lint.flake8 lint.safety lint.docs
 lint.flake8: 
 	$(PYTHON) flake8 --exclude=.venv,.eggs,*.egg,.git,migrations \
 									 --filename=*.py,*.pyx \
-									 --max-line-length=100 .
+									 --config=.flake8 \
+									 app
+
 
 # -------------------------------------------------------------------------------------------------
 # safety 

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional
 
 import aiohttp
@@ -19,7 +19,8 @@ class DataProvider(Storage):
         countries: List[Country] = [],
     ) -> List[Event]:
         log.info(
-            f"Extract events in range `{date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}`"
+            "Extract events from data provider for period:"
+            f"`{date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}`"
         )
         async with aiohttp.ClientSession() as session:
             events = []
@@ -55,9 +56,8 @@ class DataProvider(Storage):
                         ),
                     ),
                 )
-            except Exception as e:
-                log.error("Failed to transform data into indicator")
-                log.error(e)
+            except Exception as error:
+                log.error("Failed to transform data into indicator {}".format(str(error)))
                 return None
             return ind
 

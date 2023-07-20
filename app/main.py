@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pydantic import ValidationError
 
@@ -40,11 +40,8 @@ if __name__ == "__main__":
         help="Fetch data till provided date (ex 2023-01-19, 2023-01-19T10:30:00)",
         default=datetime.combine(datetime.today(), datetime.max.time()),
     )
-    parser.add_argument(
-        "--days", help="Calculate date range based on number of days", type=int
-    )
+    parser.add_argument("--days", help="Calculate date range based on number of days", type=int)
 
-    # Validate all input arguments against Settings model
     try:
         args = parser.parse_args()
         settings = Settings(**vars(args))

@@ -1,8 +1,6 @@
-from datetime import datetime, timedelta
-from typing import Dict, Optional
+from datetime import datetime
 
-from motor.motor_asyncio import (AsyncIOMotorClient, AsyncIOMotorCollection,
-                                 AsyncIOMotorDatabase)
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import MongoDsn, ValidationError
 
 from .logger import log
@@ -10,28 +8,16 @@ from .schemas import Indicator
 
 
 class Storage:
-    def __init__(self, dsn: str):
-        self.db: AsyncIOMotorDatabase = self.connect(dsn)
-        if self.db is None:
-            raise SystemError("Failed to enable storage")
-
-    def connect(self, dsn: str) -> Optional[AsyncIOMotorDatabase]:
+    def __init__(self, dsn: MongoDsn):
         try:
-            valid_dsn = MongoDsn(dsn)
-            db = str(valid_dsn).rsplit("/", 1)
+            db = str(dsn).rsplit("/", 1)
             client = AsyncIOMotorClient(db[0])
-        except ValidationError:
-            log.error("Wrong storage connection string")
-            return False
-        except Exception as e:
-            log.error("Storage is not available")
-            log.error(e)
-            return False
+        except Exception:
+            ValidationError("Storage is not available or database was not provided.")
 
         if not client or not client.server_info():
-            log.error("Failed to connect to storage.")
-            return False
-        return client[db[1]]
+            raise SystemError("Failed to connect to storage.")
+        self.db: AsyncIOMotorDatabase = client[db[1]]
 
     async def load(self, ind: Indicator, collection: str = "indicators") -> bool:
         payload = {

@@ -4,14 +4,24 @@
 #
 #    pip-compile requirements-dev.in
 #
+black==23.7.0
+    # via -r requirements-dev.in
 certifi==2023.5.7
-    # via requests
+    # via
+    #   -c requirements.txt
+    #   requests
 charset-normalizer==3.2.0
     # via
     #   -c requirements.txt
     #   requests
+click==8.1.6
+    # via
+    #   black
+    #   safety
 coverage[toml]==7.2.7
     # via pytest-cov
+dparse==0.6.3
+    # via safety
 flake8==6.0.0
     # via -r requirements-dev.in
 idna==3.4
@@ -20,12 +30,24 @@ idna==3.4
     #   requests
 iniconfig==2.0.0
     # via pytest
+isort==5.12.0
+    # via -r requirements-dev.in
 mccabe==0.7.0
     # via flake8
+mypy-extensions==1.0.0
+    # via black
 packaging==23.1
-    # via pytest
+    # via
+    #   black
+    #   dparse
+    #   pytest
+    #   safety
+pathspec==0.11.1
+    # via black
 piprot==0.9.11
     # via -r requirements-dev.in
+platformdirs==3.9.1
+    # via black
 pluggy==1.2.0
     # via pytest
 pycodestyle==2.10.0
@@ -47,11 +69,21 @@ requests==2.31.0
     # via
     #   piprot
     #   requests-futures
+    #   safety
 requests-futures==1.0.1
     # via piprot
+ruamel-yaml==0.17.32
+    # via safety
+ruamel-yaml-clib==0.2.7
+    # via ruamel-yaml
+safety==2.3.4
+    # via -r requirements-dev.in
 six==1.16.0
     # via piprot
 snowballstemmer==2.2.0
     # via pydocstyle
-urllib3==2.0.3
+urllib3==2.0.4
     # via requests
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

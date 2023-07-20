@@ -1,4 +1,4 @@
 aiohttp
 motor
-pydantic-settings
-typer
+pydantic>=2.0.0
+

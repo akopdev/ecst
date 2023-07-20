@@ -1,5 +1,5 @@
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 from pydantic import BaseModel, MongoDsn, validator
 
@@ -7,7 +7,7 @@ from .enums import Country, Currency, Period
 
 
 class Settings(BaseModel):
-    """Validates CLI arguments"""
+    """Validates CLI arguments."""
 
     storage: MongoDsn
     date_start: Optional[datetime] = None
@@ -16,7 +16,7 @@ class Settings(BaseModel):
 
     @validator("date_start", "date_end", pre=True)
     def parse_date(cls, value: datetime) -> datetime:
-        """Parse date from string"""
+        """Parse date from string."""
         try:
             if isinstance(value, str):
                 v = datetime.strptime(value, "%Y-%m-%d")
@@ -41,8 +41,9 @@ class Settings(BaseModel):
                 values["date_start"] = values["date_end"] - timedelta(days=value * -1)
         return values
 
+
 class IndicatorDataTS(BaseModel):
-    """Store data as a pair of timeseries"""
+    """Store data as a pair of timeseries."""
 
     date: datetime
     value: Optional[float] = None
@@ -56,9 +57,7 @@ class IndicatorData(BaseModel):
 
 
 class Indicator(BaseModel):
-    """
-    Indicator to store in database
-    """
+    """Indicator to store in database."""
 
     data: Optional[IndicatorData] = []
     comment: Optional[str] = None
@@ -75,7 +74,7 @@ class Indicator(BaseModel):
 
 class Event(BaseModel):
     """
-    TradingView API Event
+    TradingView API Event.
 
     May contain events without actual and forecast values.
     """
@@ -104,7 +103,7 @@ class Event(BaseModel):
 
 
 class DataProviderResult(BaseModel):
-    """TradingView API response"""
+    """TradingView API response."""
 
     status: str
     result: Optional[List[Event]] = None

@@ -8,3 +8,6 @@ piprot
 pytest
 pytest-cov
 pytest-asyncio
+isort
+black
+safety
