@@ -8,7 +8,7 @@ from .enums import Country
 from .logger import log
 from .schemas import (DataProviderResult, Event, Indicator, IndicatorData,
                       IndicatorDataTS)
-from .storage import Storage
+from .storages import Storage
 
 
 class DataProvider(Storage):

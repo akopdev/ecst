@@ -5,7 +5,7 @@ from typer import Option, Typer
 from typing_extensions import Annotated
 
 from .logger import log
-from .provider import DataProvider
+from .providers import DataProvider
 
 app = Typer(no_args_is_help=True)
 

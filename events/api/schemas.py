@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, validator
 
-from .enums import Country, Currency
+from .enums import Country, Currency, Period
 
 
 class IndicatorDataTS(BaseModel):
@@ -14,17 +14,15 @@ class IndicatorDataTS(BaseModel):
 
 
 class IndicatorData(BaseModel):
-    """Store data as a pair of timeseries"""
-
-    # actual data should always be present otherwise store it as a future event
+    # actual data should always be present otherwise store it as a upcoming event
     actual: IndicatorDataTS
-    # there might not be consensus forcast for this indicator
+    # there might not be consensus forcast for the indicator
     forcast: Optional[IndicatorDataTS] = None
 
 
 class Indicator(BaseModel):
     """
-    Schema for indicators to store and extract from database
+    Indicator to store in database
     """
 
     data: Optional[IndicatorData] = []
@@ -42,7 +40,9 @@ class Indicator(BaseModel):
 
 class Event(BaseModel):
     """
-    Schema that represents structure of event from TradingView API
+    TradingView API Event
+
+    May contain events without actual and forecast values.
     """
 
     actual: Optional[float] = None
@@ -52,10 +52,10 @@ class Event(BaseModel):
     date: datetime
     forecast: Optional[float] = None
     indicator: str
-    period: Optional[str] = None
+    period: Optional[Period] = None
     scale: Optional[str] = None
     source: str
-    ticker: Optional[str] = None
+    ticker: str
     title: str
     unit: Optional[str] = None
 
@@ -63,7 +63,12 @@ class Event(BaseModel):
     def fix_date(cls, v):
         return datetime.fromisoformat(v.replace("Z", "+00:00"))
 
+    @validator("period", pre=True, always=True)
+    def fix_period(cls, v):
+        return v if v in ["Q1", "Q2", "Q3", "Q4"] else "".join(filter(str.isalpha, v or "")) or None
+
 
 class DataProviderResult(BaseModel):
+    """TradingView API response"""
     status: str
     result: Optional[List[Event]] = None
