@@ -66,34 +66,3 @@ class Storage:
             f"Matched {res.matched_count} documents and modified {res.modified_count} documents"
         )
         return True
-
-    async def get_date_ranges(
-        self, collection: str = "indicators"
-    ) -> Optional[Dict[str, datetime]]:
-        return {"date_end": datetime.utcnow(), "date_start": datetime.utcnow() - timedelta(days=365)}
-
-        pipeline = [
-            {"$unwind": "$data"},
-            {"$match": {"data.actual.value": None}},
-            {
-                "$group": {
-                    "_id": None,
-                    "start": {"$min": "$data.actual.date"},
-                    "end": {"$max": "$data.actual.date"},
-                }
-            },
-        ]
-        try:
-            res = await self.db[collection].aggregate(pipeline).to_list(length=1)
-        except Exception as e:
-            log.error("Error while fetching indicators to update: {}".format(str(e)))
-            return None
-
-        return (
-            None
-            if not res or not res[0]
-            else {
-                "date_start": res[0]["start"],
-                "date_end": res[0]["end"],
-            }
-        )

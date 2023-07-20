@@ -14,15 +14,13 @@ from .storages import Storage
 class DataProvider(Storage):
     async def extract(
         self,
-        date_start: Optional[datetime] = None,
-        date_end: Optional[datetime] = None,
+        date_start: datetime,
+        date_end: datetime,
         countries: List[Country] = [],
     ) -> List[Event]:
-        if not date_start:
-            date_start = datetime.utcnow()
-        if not date_end:
-            date_end = date_start + timedelta(days=7)
-        log.info(f"Extract events dated between `{date_start:%d.%m.%Y}-{date_end:%d.%m.%Y}`")
+        log.info(
+            f"Extract events in range `{date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}`"
+        )
         async with aiohttp.ClientSession() as session:
             events = []
             async with session.get(
@@ -65,8 +63,8 @@ class DataProvider(Storage):
 
     async def etl(
         self,
-        date_start: Optional[datetime] = None,
-        date_end: Optional[datetime] = None,
+        date_start: datetime,
+        date_end: datetime,
         countries: List[Country] = [],
     ):
         data = await self.extract(date_start, date_end, countries)
