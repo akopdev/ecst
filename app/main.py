@@ -33,12 +33,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--date-start",
         help="Fetch events starting from this date (2023-01-19, 2023-01-19T10:30:00)",
-        default=datetime.combine(datetime.today(), datetime.min.time()),
     )
     parser.add_argument(
         "--date-end",
         help="Fetch data till provided date (ex 2023-01-19, 2023-01-19T10:30:00)",
-        default=datetime.combine(datetime.today(), datetime.max.time()),
     )
     parser.add_argument("--days", help="Calculate date range based on number of days", type=int)
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from pydantic import BaseModel, MongoDsn, validator
+from pydantic import BaseModel, FieldValidationInfo, MongoDsn, field_validator
 
 from .enums import Country, Currency, Period
 
@@ -14,32 +14,41 @@ class Settings(BaseModel):
     date_end: Optional[datetime] = None
     days: Optional[int] = None
 
-    @validator("date_start", "date_end", pre=True)
-    def parse_date(cls, value: datetime) -> datetime:
-        """Parse date from string."""
-        try:
-            if isinstance(value, str):
-                v = datetime.strptime(value, "%Y-%m-%d")
-                # convert date to datetime
-                return datetime.combine(v, datetime.min.time())
-        except ValueError:
-            return value
-        return value
-
-    @validator("days", always=True)
-    def parse_days(cls, value: int, values: dict) -> int:
+    @field_validator("days")
+    def parse_days(cls, v: int, values: FieldValidationInfo) -> dict:
         """If days is specified, calculate date_start and date_end.
 
         If days is a positive number, then set date range to future, otherwise to past.
+        If date_start is defined, then calculate date_end based on days.
+        If date_end is defined, then calculate date_start based on days.
+        If both date_start and date_end are defined, then calculate days.
         """
-        if value is not None:
-            if value > 0:
-                values["date_start"] = values.get("date_start", datetime.utcnow())
-                values["date_end"] = values["date_start"] + timedelta(days=value)
+        if values.data.get("date_start") and values.data.get("date_end"):
+            values.data["days"] = (values.data["date_end"] - values.data["date_start"]).days
+        elif v is not None:
+            if v > 0:
+                if values.data.get("date_start"):
+                    values.data["date_end"] = values.data["date_start"] + timedelta(days=v)
+                elif values.data.get("date_end"):
+                    values.data["date_start"] = values.data["date_end"] - timedelta(days=v)
             else:
-                values["date_end"] = values.get("date_end", datetime.utcnow())
-                values["date_start"] = values["date_end"] - timedelta(days=value * -1)
+                if values.data.get("date_start"):
+                    values.data["date_end"] = values.data["date_start"] - timedelta(days=v * -1)
+                elif values.data.get("date_end"):
+                    values.data["date_start"] = values.data["date_end"] - timedelta(days=v * -1)
         return values
+
+    @field_validator("date_start", "date_end", mode="before")
+    def parse_date(cls, v: datetime) -> datetime:
+        """Parse date from string."""
+        try:
+            if isinstance(v, str):
+                v = datetime.strptime(v, "%Y-%m-%d")
+                # convert date to datetime
+                return datetime.combine(v, datetime.min.time())
+        except ValueError:
+            return v
+        return v
 
 
 class IndicatorDataTS(BaseModel):
@@ -93,11 +102,11 @@ class Event(BaseModel):
     title: str
     unit: Optional[str] = None
 
-    @validator("date", pre=True, always=True)
+    @field_validator("date", mode="before")
     def fix_date(cls, v):
         return datetime.fromisoformat(v.replace("Z", "+00:00"))
 
-    @validator("period", pre=True, always=True)
+    @field_validator("period", mode="before")
     def fix_period(cls, v):
         return v if v in ["Q1", "Q2", "Q3", "Q4"] else "".join(filter(str.isalpha, v or "")) or None
 
