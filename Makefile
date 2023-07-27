@@ -1,7 +1,7 @@
 .NOTPARALLEL: ;          # wait for this target to finish
 .EXPORT_ALL_VARIABLES: ; # send all vars to shell
-.PHONY: all 			 			 # All targets are accessible for user
-.DEFAULT: help 			 		 # Running Make will run the help target
+.PHONY: all 			 # All targets are accessible for user
+.DEFAULT: help 			 # Running Make will run the help target
 
 PYTHON = @.venv/bin/python -m
 
@@ -28,20 +28,13 @@ update: compile install
 activate:
 	@python3 -m venv .venv
 	@. .venv/bin/activate 
-	$(PYTHON) pip install pip-tools
 
-# -------------------------------------------------------------------------------------------------
-# Update package dependencies
-# -------------------------------------------------------------------------------------------------
-compile:
-	$(PYTHON) piptools compile --upgrade requirements.in 
-	$(PYTHON) piptools compile --upgrade requirements-dev.in
-	
 # -------------------------------------------------------------------------------------------------
 # Install packages to current environment
 # -------------------------------------------------------------------------------------------------
 install:
-	$(PYTHON) piptools sync requirements.txt requirements-dev.txt
+	$(PYTHON) pip install -e .
+	$(PYTHON) pip install -e .[dev]
 
 # -------------------------------------------------------------------------------------------------
 # test: @ Run tests using pytest
@@ -53,8 +46,8 @@ test:
 # format: @ Format source code and auto fix minor issues
 # -------------------------------------------------------------------------------------------------
 format:
-	$(PYTHON) black --line-length=100 app
-	$(PYTHON) isort app
+	$(PYTHON) black --line-length=100 stats
+	$(PYTHON) isort stats
 
 
 # -------------------------------------------------------------------------------------------------
@@ -69,14 +62,14 @@ lint.flake8:
 	$(PYTHON) flake8 --exclude=.venv,.eggs,*.egg,.git,migrations \
 									 --filename=*.py,*.pyx \
 									 --config=.flake8 \
-									 app
+									 stats
 
 
 # -------------------------------------------------------------------------------------------------
 # safety 
 # -------------------------------------------------------------------------------------------------
 lint.safety: 
-	$(PYTHON) safety check --full-report -r requirements.txt
+	$(PYTHON) safety check
 
 # -------------------------------------------------------------------------------------------------
 # pydocstyle
@@ -98,7 +91,7 @@ lint.docs:
 #  build: @ Build container
 #  -------------------------------------------------------------------------------------------------
 build:
-	@docker build -t app:latest .
+	@docker build -t stats:latest .
 
 # -------------------------------------------------------------------------------------------------
 #  clean: @ Clean up local environment

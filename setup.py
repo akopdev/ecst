@@ -1,16 +1,25 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 from stats import __version__
 
 setup(
-    name="app",
+    name="stats",
     version=__version__,
     packages=find_packages(),
-    install_requires=[
-
-    ],
-    entry_points={
-        'console_scripts': [
-            'stats=stats'
-        ]
+    install_requires=["aiohttp", "motor", "pydantic>=2.0.0"],
+    extras_require={
+        "dev": [
+            "flake8",
+            "pydocstyle",
+            "piprot",
+            "pytest",
+            "pytest-cov",
+            "pytest-asyncio",
+            "isort",
+            "black",
+            "safety",
+            "aioresponses",
+        ],
     },
+    entry_points={"console_scripts": ["stats=stats"]},
 )

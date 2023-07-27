@@ -46,8 +46,6 @@ def test_parse_date(date_str, expected):
         assert schema.date_start == expected
 
 
-
-
 @pytest.mark.parametrize("days,inputs,expected", parse_days_data)
 def test_parse_days(days, inputs, expected):
     for days, inputs, expected in parse_days_data:
