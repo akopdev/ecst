@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .providers import DataProvider
 from .schemas import Settings
+from . import __version__
 
 
 async def main(settings: Settings):
@@ -21,12 +22,11 @@ async def main(settings: Settings):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Load actual values for all indicators from data provider"
-    )
+    parser = argparse.ArgumentParser(description="Economic indicators")
     parser.add_argument(
-        "storage",
-        help="Specify DSN string to connect data storage",
+        "--storage",
+        help="Specify DSN string to connect external data storage. "
+        "Support environment variable `STORAGE`",
         default=os.environ.get("STORAGE"),
     )
     parser.add_argument(
@@ -38,6 +38,9 @@ if __name__ == "__main__":
         help="Fetch data till provided date (ex 2023-01-19, 2023-01-19T10:30:00)",
     )
     parser.add_argument("--days", help="Calculate date range based on number of days", type=int)
+    parser.add_argument(
+        "--version", help="Print current version and exit", action="version", version=__version__
+    )
 
     try:
         args = parser.parse_args()

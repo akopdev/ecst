@@ -4,8 +4,8 @@ from datetime import datetime
 import pytest
 from aioresponses import aioresponses
 
-from app.providers import DataProvider
-from app.schemas import Event
+from stats.providers import DataProvider
+from stats.schemas import Event
 
 
 @pytest.fixture()

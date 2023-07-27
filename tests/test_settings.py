@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.schemas import Settings
+from stats.schemas import Settings
 
 # Sample test cases for Settings schema
 parse_date_data = [
