@@ -92,3 +92,16 @@ lint.safety:
 #   D107	Missing docstring in __init__
 lint.docs: 
 	$(PYTHON) pydocstyle --convention=numpy --add-ignore=D100,D101,D102,D103,D104,D105,D106,D107 .
+
+
+# -------------------------------------------------------------------------------------------------
+#  build: @ Build container
+#  -------------------------------------------------------------------------------------------------
+build:
+	@docker build -t app:latest .
+
+# -------------------------------------------------------------------------------------------------
+#  clean: @ Clean up local environment
+#  -------------------------------------------------------------------------------------------------
+clean:
+	@rm -rf .venv/ dist/ build/ *.egg-info/ .pytest_cache/ .coverage coverage.xml
