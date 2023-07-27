@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from .providers import DataProvider
 from .schemas import Settings
 from . import __version__
+import tempfile
 
 
 async def main(settings: Settings):
@@ -27,7 +28,7 @@ if __name__ == "__main__":
         "--storage",
         help="Specify DSN string to connect external data storage. "
         "Support environment variable `STORAGE`",
-        default=os.environ.get("STORAGE"),
+        default=os.environ.get("STORAGE") or f"montydb://{tempfile.gettempdir()}/stats",
     )
     parser.add_argument(
         "--date-start",

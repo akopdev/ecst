@@ -6,7 +6,7 @@ setup(
     name="stats",
     version=__version__,
     packages=find_packages(),
-    install_requires=["aiohttp", "motor", "pydantic>=2.0.0"],
+    install_requires=["aiohttp", "motor", "pydantic>=2.0.0", "montydb[lmdb]"],
     extras_require={
         "dev": [
             "flake8",

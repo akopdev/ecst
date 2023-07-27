@@ -1,21 +1,25 @@
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, FieldValidationInfo, MongoDsn, field_validator
+from pydantic import (BaseModel, MongoDsn, UrlConstraints, field_validator,
+                      model_validator)
+from pydantic_core import MultiHostUrl
 
 from .enums import Country, Currency, Period
+
+MontyDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=["montydb"])]
 
 
 class Settings(BaseModel):
     """Validates CLI arguments."""
 
-    storage: MongoDsn
+    storage: MongoDsn | MontyDsn
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None
     days: Optional[int] = None
 
-    @field_validator("days")
-    def parse_days(cls, v: int, values: FieldValidationInfo) -> dict:
+    @model_validator(mode="after")
+    def parse_days(self):
         """If days is specified, calculate date_start and date_end.
 
         If days is a positive number, then set date range to future, otherwise to past.
@@ -23,20 +27,27 @@ class Settings(BaseModel):
         If date_end is defined, then calculate date_start based on days.
         If both date_start and date_end are defined, then calculate days.
         """
-        if values.data.get("date_start") and values.data.get("date_end"):
-            values.data["days"] = (values.data["date_end"] - values.data["date_start"]).days
-        elif v is not None:
-            if v > 0:
-                if values.data.get("date_start"):
-                    values.data["date_end"] = values.data["date_start"] + timedelta(days=v)
-                elif values.data.get("date_end"):
-                    values.data["date_start"] = values.data["date_end"] - timedelta(days=v)
+        if self.date_start and self.date_end:
+            self.days = (self.date_end - self.date_start).days
+        elif self.days is not None:
+            if self.days > 0:
+                if self.date_start:
+                    self.date_end = self.date_start + timedelta(days=self.days)
+                elif self.date_end:
+                    self.date_start = self.date_end - timedelta(days=self.days)
+                else:
+                    self.date_start = datetime.utcnow()
+                    self.date_end = self.date_start + timedelta(days=self.days)
             else:
-                if values.data.get("date_start"):
-                    values.data["date_end"] = values.data["date_start"] - timedelta(days=v * -1)
-                elif values.data.get("date_end"):
-                    values.data["date_start"] = values.data["date_end"] - timedelta(days=v * -1)
-        return values
+                if self.date_start:
+                    self.date_end = self.date_start - timedelta(days=self.days * -1)
+                elif self.date_end:
+                    self.date_start = self.date_end - timedelta(days=self.days * -1)
+                else:
+                    self.date_end = datetime.utcnow()
+                    self.date_start = self.date_end - timedelta(days=self.days * -1)
+
+        return self
 
     @field_validator("date_start", "date_end", mode="before")
     def parse_date(cls, v: datetime) -> datetime:
@@ -98,7 +109,7 @@ class Event(BaseModel):
     period: Optional[Period] = None
     scale: Optional[str] = None
     source: str
-    ticker: str
+    ticker: Optional[str] = None
     title: str
     unit: Optional[str] = None
 

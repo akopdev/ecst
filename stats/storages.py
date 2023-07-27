@@ -1,14 +1,30 @@
 from datetime import datetime
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from montydb import MontyClient, set_storage
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pydantic import MongoDsn, ValidationError
 
 from .logger import log
-from .schemas import Indicator
+from .schemas import Indicator, MontyDsn
 
 
 class Storage:
-    def __init__(self, dsn: MongoDsn):
+    def __init__(self, dsn: MongoDsn | MontyDsn, collection: str = "indicators"):
+        if dsn.scheme == "montydb":
+            self.collection = self.connect_montydb(dsn, collection)
+        else:
+            self.collection = self.connect_mongodb(dsn, collection)
+
+    def connect_montydb(self, dsn: MontyDsn, collection: str) -> MontyClient:
+        try:
+            repo = "/".join([dsn.path, collection])
+            set_storage(repository=repo, use_bson=True)
+            client = MontyClient(repo)
+        except Exception:
+            ValidationError("Storage is not available or database was not provided.")
+        return client[collection]
+
+    def connect_mongodb(self, dsn: MongoDsn, collection: str) -> AsyncIOMotorCollection:
         try:
             db = str(dsn).rsplit("/", 1)
             client = AsyncIOMotorClient(db[0])
@@ -17,9 +33,9 @@ class Storage:
 
         if not client or not client.server_info():
             raise SystemError("Failed to connect to storage.")
-        self.db: AsyncIOMotorDatabase = client[db[1]]
+        return client[db[1]][collection]
 
-    async def load(self, ind: Indicator, collection: str = "indicators") -> bool:
+    async def load(self, ind: Indicator) -> bool:
         payload = {
             "$set": {
                 "country": ind.country,
@@ -40,7 +56,7 @@ class Storage:
 
         log.info("Saving event into data storage ...")
         try:
-            res = await self.db[collection].update_one(
+            res = await self.collection.update_one(
                 {"ticker": ind.ticker},
                 payload,
                 upsert=True,
