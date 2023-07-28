@@ -2,18 +2,19 @@ from datetime import datetime
 
 from montydb import MontyClient, set_storage
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from pydantic import MongoDsn, ValidationError
+from pydantic import MongoDsn, PostgresDsn, ValidationError
+from sqlalchemy import Column, MetaData, String, Table, select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from .logger import log
 from .schemas import Indicator, MontyDsn
 
 
 class Storage:
-    def __init__(self, dsn: MongoDsn | MontyDsn, collection: str = "indicators"):
-        if dsn.scheme == "montydb":
-            self.collection = self.connect_montydb(dsn, collection)
-        else:
-            self.collection = self.connect_mongodb(dsn, collection)
+    def __init__(self, dsn: PostgresDsn):
+        engine = create_async_engine(dsn,echo=True,)
+
+        self.session = async_sessionmaker(engine, expire_on_commit=False)
 
     def connect_montydb(self, dsn: MontyDsn, collection: str) -> MontyClient:
         try:
