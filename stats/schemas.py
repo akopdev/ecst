@@ -40,6 +40,9 @@ class Settings(BaseModel):
             self.days = (self.date_end - self.date_start).days
         elif self.days is not None:
             if self.days > 0:
+                # todo: don't confuse user with positive/negative days,
+                #       just use date_start and date_end to understand direction.
+                #       days + date_end will fetch past events, days + date_start - upcoming
                 if self.date_start:
                     self.date_end = self.date_start + timedelta(days=self.days)
                 elif self.date_end:
