@@ -6,7 +6,7 @@ setup(
     name="stats",
     version=__version__,
     packages=find_packages(),
-    install_requires=["aiohttp", "motor", "pydantic>=2.0.0", "montydb[lmdb]", "sqlalchemy[asyncio]"],
+    install_requires=["aiohttp", "pydantic>=2.0.0", "sqlalchemy[asyncio]"],
     extras_require={
         "dev": [
             "flake8",

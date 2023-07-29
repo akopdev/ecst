@@ -1,71 +1,72 @@
 from datetime import datetime
+from typing import List
 
-from montydb import MontyClient, set_storage
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from pydantic import MongoDsn, PostgresDsn, ValidationError
-from sqlalchemy import Column, MetaData, String, Table, select
+from pydantic import PostgresDsn
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from .logger import log
-from .schemas import Indicator, MontyDsn
+from .models import BaseModel, Indicator, IndicatorData
+from .schemas import Event, SQLiteDsn
 
 
 class Storage:
-    def __init__(self, dsn: PostgresDsn):
-        engine = create_async_engine(dsn,echo=True,)
+    def __init__(self, dsn: PostgresDsn | SQLiteDsn):
+        self.engine = create_async_engine(dsn, echo=True)
+        self.session = async_sessionmaker(self.engine, expire_on_commit=False)
 
-        self.session = async_sessionmaker(engine, expire_on_commit=False)
+    async def connect(self):
+        log.info("Connecting to data storage ...")
+        async with self.engine.begin() as conn:
+            await conn.run_sync(BaseModel.metadata.create_all)
 
-    def connect_montydb(self, dsn: MontyDsn, collection: str) -> MontyClient:
-        try:
-            repo = "/".join([dsn.path, collection])
-            set_storage(repository=repo, use_bson=True)
-            client = MontyClient(repo)
-        except Exception:
-            ValidationError("Storage is not available or database was not provided.")
-        return client[collection]
+    async def load(self, events: List[Event]) -> bool:
+        log.info("Transforming events into indicators ...")
 
-    def connect_mongodb(self, dsn: MongoDsn, collection: str) -> AsyncIOMotorCollection:
-        try:
-            db = str(dsn).rsplit("/", 1)
-            client = AsyncIOMotorClient(db[0])
-        except Exception:
-            ValidationError("Storage is not available or database was not provided.")
+        indicators = {}
+        for event in events:
+            if event.actual:
+                try:
+                    if event.ticker not in indicators:
+                        indicators[event.ticker] = Indicator(
+                            **event.dict(
+                                exclude_unset=True,
+                                exclude={"actual", "forecast", "date"}
+                            ),
+                            data=[
+                                IndicatorData(
+                                    ticker=event.ticker,
+                                    date=event.date,
+                                    actual=event.actual,
+                                    forcast=event.forecast,
+                                )
+                            ],
+                        )
+                    else:
+                        indicators[event.ticker].data.append(
+                            IndicatorData(
+                                ticker=event.ticker,
+                                date=event.date,
+                                actual=event.actual,
+                                forcast=event.forecast,
+                            )
+                        )
+                except Exception as error:
+                    log.error("Failed to transform data into indicator {}".format(str(error)))
+                    return False
 
-        if not client or not client.server_info():
-            raise SystemError("Failed to connect to storage.")
-        return client[db[1]][collection]
-
-    async def load(self, ind: Indicator) -> bool:
-        payload = {
-            "$set": {
-                "country": ind.country,
-                "currency": ind.currency,
-                "indicator": ind.indicator,
-                "ticker": ind.ticker,
-                "title": ind.title,
-                "unit": ind.unit,
-                "updated_at": datetime.utcnow(),
-            },
-            "$addToSet": {},
-        }
-        if ind.data.actual.value is not None:
-            payload["$addToSet"]["data.actual"] = ind.data.actual.model_dump(exclude_unset=True)
-
-        if ind.data.forcast.value is not None:
-            payload["$addToSet"]["data.forcast"] = ind.data.forcast.model_dump(exclude_unset=True)
-
-        log.info("Saving event into data storage ...")
-        try:
-            res = await self.collection.update_one(
-                {"ticker": ind.ticker},
-                payload,
-                upsert=True,
-            )
-        except Exception as e:
-            log.error("Error while updating storage record: {}".format(str(e)))
-            return False
-        log.info(
-            f"Matched {res.matched_count} documents and modified {res.modified_count} documents"
-        )
+        log.info("Loading event into data storage ...")
+        async with self.session() as session:
+            async with session.begin():
+                try:
+                    q = select(Indicator.ticker).filter(Indicator.ticker.in_(indicators.keys()))
+                    for ind in await session.execute(q):
+                        # todo: don't try to merge if data is already in Storage, instead create indicator
+                        #       and then add all relevant data
+                        await session.merge(indicators.pop(ind.ticker))
+                    session.add_all(indicators.values())
+                    await session.commit()
+                except Exception as e:
+                    log.error("Error while updating storage record: {}".format(str(e)))
+                    return False
         return True

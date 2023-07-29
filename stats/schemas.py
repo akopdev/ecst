@@ -1,19 +1,28 @@
 from datetime import datetime, timedelta
 from typing import Annotated, List, Optional
 
-from pydantic import (BaseModel, MongoDsn, UrlConstraints, field_validator,
-                      model_validator)
-from pydantic_core import MultiHostUrl
+from pydantic import (BaseModel, Field, FieldValidationInfo, PostgresDsn,
+                      UrlConstraints, field_validator, model_validator)
+from pydantic_core import MultiHostUrl, Url
 
 from .enums import Country, Currency, Period
 
-MontyDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=["montydb"])]
+SQLiteDsn = Annotated[
+    Url,
+    UrlConstraints(
+        host_required=False,
+        allowed_schemes=[
+            "sqlite",
+            "sqlite3",
+        ],
+    ),
+]
 
 
 class Settings(BaseModel):
     """Validates CLI arguments."""
 
-    storage: MongoDsn | MontyDsn
+    storage: PostgresDsn | str  # TODO: replace str with SQLiteDsn
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None
     days: Optional[int] = None
@@ -54,42 +63,10 @@ class Settings(BaseModel):
         """Parse date from string."""
         try:
             if isinstance(v, str):
-                v = datetime.strptime(v, "%Y-%m-%d")
-                # convert date to datetime
-                return datetime.combine(v, datetime.min.time())
+                return datetime.combine(datetime.strptime(v, "%Y-%m-%d"), datetime.min.time())
         except ValueError:
             return v
         return v
-
-
-class IndicatorDataTS(BaseModel):
-    """Store data as a pair of timeseries."""
-
-    date: datetime
-    value: Optional[float] = None
-
-
-class IndicatorData(BaseModel):
-    # actual data should always be present otherwise store it as a upcoming event
-    actual: IndicatorDataTS
-    # there might not be consensus forcast for the indicator
-    forcast: Optional[IndicatorDataTS] = None
-
-
-class Indicator(BaseModel):
-    """Indicator to store in database."""
-
-    data: Optional[IndicatorData] = []
-    comment: Optional[str] = None
-    country: Country
-    currency: Currency
-    indicator: str
-    period: Optional[str] = None
-    scale: Optional[str] = None
-    source: str
-    ticker: Optional[str] = None
-    title: str
-    unit: Optional[str] = None
 
 
 class Event(BaseModel):
@@ -100,7 +77,6 @@ class Event(BaseModel):
     """
 
     actual: Optional[float] = None
-    comment: Optional[str] = None
     country: Country
     currency: Currency
     date: datetime
@@ -109,9 +85,19 @@ class Event(BaseModel):
     period: Optional[Period] = None
     scale: Optional[str] = None
     source: str
-    ticker: Optional[str] = None
     title: str
+    ticker: str
     unit: Optional[str] = None
+
+    @model_validator(mode="before")
+    def fix_ticker(values: dict):
+        # if ticker is not specified, then generate it by combining the first letter of each word in title
+        if not values.get("ticker"):
+            values["ticker"] = (
+                values.get("country")
+                + "".join([word[0] for word in values.get("title", "").split()]).upper()
+            )
+        return values
 
     @field_validator("date", mode="before")
     def fix_date(cls, v):

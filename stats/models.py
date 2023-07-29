@@ -9,13 +9,15 @@ from .enums import Country, Currency
 
 
 class BaseModel(AsyncAttrs, DeclarativeBase):
-    pass
+    def __1init__(self, **entries):
+        self.__dict__.update(entries)
 
 
 class IndicatorData(BaseModel):
     __tablename__ = "indicator_data"
 
-    ticker: Mapped[int] = mapped_column(ForeignKey("indicators.ticker"))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticker: Mapped[str] = mapped_column(ForeignKey("indicator.ticker"))
     date: Mapped[datetime.datetime]
     actual: Mapped[float]
     forcast: Mapped[Optional[float]]
@@ -27,13 +29,11 @@ class Indicator(BaseModel):
     ticker: Mapped[str] = mapped_column(primary_key=True)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
     data: Mapped[List[IndicatorData]] = relationship()
-    comment: Mapped[Optional[str]]
     country: Mapped[Country]
     currency: Mapped[Currency]
     indicator: Mapped[str]
     period: Mapped[Optional[str]]
     scale: Mapped[Optional[str]]
     source: Mapped[str]
-    ticker: Mapped[Optional[str]]
     title: Mapped[str]
     unit: Mapped[Optional[str]]

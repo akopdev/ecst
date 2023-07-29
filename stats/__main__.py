@@ -14,10 +14,12 @@ import tempfile
 async def main(settings: Settings):
     try:
         provider = DataProvider(settings.storage)
-        await provider.etl(
+        await provider.connect()
+        events = await provider.extract(
             date_start=settings.date_start,
             date_end=settings.date_end,
         )
+        await provider.load(events)
     except Exception as e:
         sys.exit(e)
 
@@ -28,7 +30,7 @@ if __name__ == "__main__":
         "--storage",
         help="Specify DSN string to connect external data storage. "
         "Support environment variable `STORAGE`",
-        default=os.environ.get("STORAGE") or f"montydb://{tempfile.gettempdir()}/stats",
+        default=os.environ.get("STORAGE") or f"sqlite+aiosqlite:///stats.db",
     )
     parser.add_argument(
         "--date-start",

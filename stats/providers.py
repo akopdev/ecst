@@ -6,8 +6,8 @@ from pydantic import ValidationError
 
 from .enums import Country
 from .logger import log
-from .schemas import (DataProviderResult, Event, Indicator, IndicatorData,
-                      IndicatorDataTS)
+from .models import Indicator, IndicatorData
+from .schemas import DataProviderResult, Event
 from .storages import Storage
 
 
@@ -41,35 +41,20 @@ class DataProvider(Storage):
                 return events
 
     def transform(self, event: Event) -> Optional[Indicator]:
-        if event.actual or event.forecast:
+        if event.actual:
             try:
                 ind = Indicator(
-                    **event.model_dump(exclude_unset=True),
-                    data=IndicatorData(
-                        actual=IndicatorDataTS(
+                    **event.dict(exclude_unset=True, exclude={"actual", "forecast", "date"}),
+                    data=[
+                        IndicatorData(
+                            ticker=event.ticker,
                             date=event.date,
-                            value=event.actual,
-                        ),
-                        forcast=IndicatorDataTS(
-                            date=event.date,
-                            value=event.forecast,
-                        ),
-                    ),
+                            actual=event.actual,
+                            forcast=event.forecast,
+                        )
+                    ],
                 )
             except Exception as error:
                 log.error("Failed to transform data into indicator {}".format(str(error)))
                 return None
             return ind
-
-    async def etl(
-        self,
-        date_start: datetime,
-        date_end: datetime,
-        countries: List[Country] = [],
-    ):
-        data = await self.extract(date_start, date_end, countries)
-        if data:
-            for event in data:
-                indicator = self.transform(event)
-                if indicator:
-                    await self.load(indicator)
