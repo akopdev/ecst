@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
-from typing import Annotated, List, Optional
+from typing import Annotated, Dict, List, Optional, Tuple
 
 from pydantic import (BaseModel, Field, FieldValidationInfo, PostgresDsn,
                       UrlConstraints, field_validator, model_validator)
 from pydantic_core import MultiHostUrl, Url
+
+from stats.models import Indicator, IndicatorData
 
 from .enums import Country, Currency, Period
 
@@ -102,10 +104,6 @@ class Event(BaseModel):
             )
         return values
 
-    @field_validator("date", mode="before")
-    def fix_date(cls, v):
-        return datetime.fromisoformat(v.replace("Z", "+00:00"))
-
     @field_validator("period", mode="before")
     def fix_period(cls, v):
         return v if v in ["Q1", "Q2", "Q3", "Q4"] else "".join(filter(str.isalpha, v or "")) or None
@@ -116,3 +114,15 @@ class DataProviderResult(BaseModel):
 
     status: str
     result: Optional[List[Event]] = None
+
+
+class Indicators(BaseModel):
+    """
+    Container to store indicators and metrics to easy sync with existing records.
+    """
+
+    meta: Dict[str, Indicator]
+    data: Dict[Tuple[str, datetime], IndicatorData]
+
+    class Config:
+        arbitrary_types_allowed = True

@@ -8,11 +8,10 @@ from .enums import Country
 from .logger import log
 from .models import Indicator, IndicatorData
 from .schemas import DataProviderResult, Event
-from .storages import Storage
 
 
-class DataProvider(Storage):
-    async def extract(
+class DataProvider:
+    async def fetch(
         self,
         date_start: datetime,
         date_end: datetime,
@@ -39,22 +38,3 @@ class DataProvider(Storage):
                     log.error("Error while parsing data: {}".format(str(error)))
                     return False
                 return events
-
-    def transform(self, event: Event) -> Optional[Indicator]:
-        if event.actual:
-            try:
-                ind = Indicator(
-                    **event.dict(exclude_unset=True, exclude={"actual", "forecast", "date"}),
-                    data=[
-                        IndicatorData(
-                            ticker=event.ticker,
-                            date=event.date,
-                            actual=event.actual,
-                            forcast=event.forecast,
-                        )
-                    ],
-                )
-            except Exception as error:
-                log.error("Failed to transform data into indicator {}".format(str(error)))
-                return None
-            return ind

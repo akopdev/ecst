@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Optional
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import ForeignKey, PrimaryKeyConstraint, func
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -16,11 +16,11 @@ class BaseModel(AsyncAttrs, DeclarativeBase):
 class IndicatorData(BaseModel):
     __tablename__ = "indicator_data"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    ticker: Mapped[str] = mapped_column(ForeignKey("indicator.ticker"))
-    date: Mapped[datetime.datetime]
+    ticker: Mapped[str] = mapped_column(ForeignKey("indicator.ticker"), primary_key=True)
+    date: Mapped[datetime.datetime] = mapped_column(primary_key=True)
     actual: Mapped[float]
-    forcast: Mapped[Optional[float]]
+    forecast: Mapped[Optional[float]]
+    meta: Mapped["Indicator"] = relationship(back_populates="data")
 
 
 class Indicator(BaseModel):

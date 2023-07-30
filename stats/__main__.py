@@ -5,7 +5,8 @@ import sys
 
 from pydantic import ValidationError
 
-from .providers import DataProvider
+from .storages import Storage
+
 from .schemas import Settings
 from . import __version__
 import tempfile
@@ -13,13 +14,14 @@ import tempfile
 
 async def main(settings: Settings):
     try:
-        provider = DataProvider(settings.storage)
-        await provider.connect()
-        events = await provider.extract(
+        storage = Storage(settings.storage)
+        await storage.connect()
+        events = await storage.query(
             date_start=settings.date_start,
             date_end=settings.date_end,
         )
-        await provider.load(events)
+
+        # print("{}\t{:<8}\t{:<8}".format(event.date, event.ticker, event.actual))
     except Exception as e:
         sys.exit(e)
 
@@ -30,7 +32,7 @@ if __name__ == "__main__":
         "--storage",
         help="Specify DSN string to connect external data storage. "
         "Support environment variable `STORAGE`",
-        default=os.environ.get("STORAGE") or f"sqlite+aiosqlite:///stats.db",
+        default=os.environ.get("STATS_STORAGE") or f"sqlite+aiosqlite:///stats.db",
     )
     parser.add_argument(
         "--date-start",
