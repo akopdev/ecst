@@ -134,10 +134,10 @@ class QueryResult(BaseModel):
     def model_dump_csv(self):
         result = [
             "{},{},{},{}".format(
-                self.data[0].__fields__.get("date").title,
-                self.data[0].__fields__.get("ticker").title,
-                self.data[0].__fields__.get("actual").title,
-                self.data[0].__fields__.get("forecast").title,
+                QueryResultData.__fields__.get("date").title,
+                QueryResultData.__fields__.get("ticker").title,
+                QueryResultData.__fields__.get("actual").title,
+                QueryResultData.__fields__.get("forecast").title,
             )
         ]
 
@@ -148,10 +148,10 @@ class QueryResult(BaseModel):
     def model_dump_text(self):
         result = [
             "{:<8}\t{:<8}\t{:<8}\t{}".format(
-                self.data[0].__fields__.get("date").title,
-                self.data[0].__fields__.get("ticker").title,
-                self.data[0].__fields__.get("actual").title,
-                self.data[0].__fields__.get("forecast").title,
+                QueryResultData.__fields__.get("date").title,
+                QueryResultData.__fields__.get("ticker").title,
+                QueryResultData.__fields__.get("actual").title,
+                QueryResultData.__fields__.get("forecast").title,
             )
         ]
         for row in self.data:

@@ -1,31 +1,18 @@
-ARG python=3.11
+# Base image with python
+FROM cgr.dev/chainguard/wolfi-base as base
+ARG version=3.11
+RUN apk add python-${version} py${version}-pip
 
 # Intermediate layer
-FROM python:${python}-slim as builder
+FROM base as builder
 
-COPY requirements.txt /root/requirements.txt
+COPY . /root/code
 
-
-RUN pip wheel -r /root/requirements.txt --wheel-dir=/root/wheels
+RUN pip install build
+RUN pip install -e /root/code
 
 # Production
-FROM python:${python}-slim as production
 
-# Get Build Hash From CI
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
 
-WORKDIR /code
-
-# We still have some production dependencies
-RUN apt-get update && rm -rf /var/lib/apt/lists/*
-
-# Get all pre-build stuff
-COPY --from=builder /root/requirements.txt ./requirements.txt
-COPY --from=builder /root/wheels /root/wheels
-
-# So far poetry doesn't respect pip env vars likes PIP_WHEEL_DIR/PIP_FIND_LINKS
-# that's why we should use pip itself.
-RUN pip install --no-cache-dir --no-index --find-links=/root/wheels -r requirements.txt
-
-COPY . ./
-
+CMD ["stats"]

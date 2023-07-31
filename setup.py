@@ -21,5 +21,5 @@ setup(
             "aioresponses",
         ],
     },
-    entry_points={"console_scripts": ["stats=stats"]},
+    entry_points={"console_scripts": ["stats=stats.__main__:main"]},
 )

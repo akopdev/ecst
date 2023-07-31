@@ -17,7 +17,7 @@ class DataProvider:
         countries: List[Country] = [],
     ) -> List[Event]:
         log.info(
-            "Extract events from data provider for period:"
+            "Fetch data from provider for period:"
             f"`{date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}`"
         )
         async with aiohttp.ClientSession() as session:

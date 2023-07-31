@@ -1,8 +1,6 @@
 import argparse
 import asyncio
-import os
 import sys
-import tempfile
 
 from pydantic import ValidationError
 
@@ -11,7 +9,7 @@ from .schemas import Settings
 from .storages import Storage
 
 
-async def main(settings: Settings):
+async def run(settings: Settings):
     try:
         storage = Storage(settings.storage)
         await storage.connect()
@@ -20,16 +18,19 @@ async def main(settings: Settings):
             date_end=settings.date_end,
         )
 
-        format = {"csv": events.model_dump_csv, "json": events.model_dump_json, "text": events.model_dump_text}[settings.format]
+        format = {
+            "csv": events.model_dump_csv,
+            "json": events.model_dump_json,
+            "text": events.model_dump_text,
+        }[settings.format]
         print(format())
     except Exception as e:
         sys.exit(e)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
-        description="Economic indicators",
-        argument_default=argparse.SUPPRESS
+        description="Economic indicators", argument_default=argparse.SUPPRESS
     )
     parser.add_argument(
         "--storage",
@@ -62,4 +63,8 @@ if __name__ == "__main__":
             )
         )
 
-    asyncio.run(main(settings))
+    asyncio.run(run(settings))
+
+
+if __name__ == "__main__":
+    main()
