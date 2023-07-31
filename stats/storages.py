@@ -43,8 +43,7 @@ class Storage(DataProvider):
         # get only dates that are not in storage
         dates = await self.dates_to_sync(date_start, date_end)
         tasks = [self.sync(*date, countries=countries) for date in dates]
-
-        t = await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
         # query data from Storage
         async with self.session() as session:
