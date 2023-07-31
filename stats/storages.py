@@ -111,7 +111,7 @@ class Storage(DataProvider):
             if event.actual:
                 try:
                     result["meta"][event.ticker] = Indicator(
-                        **event.dict(exclude_unset=True, exclude={"actual", "forecast", "date"})
+                        **event.model_dump(exclude_unset=True, exclude={"actual", "forecast", "date"})
                     )
                     # We use a combination of ticker and date as a primary key while comparing
                     # with already stored data. However, sqlalchemy returns datetime without tzinfo,

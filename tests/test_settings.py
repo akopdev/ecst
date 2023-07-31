@@ -23,7 +23,7 @@ parse_days_data = [
         {"date_start": datetime(2020, 1, 1, 0, 0), "date_end": datetime(2020, 1, 2, 0, 0)},
     ),
     (
-        None,
+        0,
         {"date_start": datetime(2020, 1, 1, 0, 0), "date_end": datetime(2020, 1, 2, 0, 0)},
         {"date_start": datetime(2020, 1, 1, 0, 0), "date_end": datetime(2020, 1, 2, 0, 0)},
     ),

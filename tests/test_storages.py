@@ -31,7 +31,7 @@ async def test_transform_event_to_indicator(dsn: str):
     """
     event = Event(**sample_event)
     storage = Storage(dsn)
-    storage.connect()
+    await storage.connect()
     indicators = await storage.transform([event])
     assert indicators.meta["AUCIR"].country == "AU"
     assert indicators.data[("AUCIR", datetime(2023, 7, 26, 1, 30),)].actual == 5.9

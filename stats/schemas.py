@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Dict, List, Optional, Tuple
 
-from pydantic import (BaseModel, Field, PostgresDsn, UrlConstraints,
-                      field_validator, model_validator)
+from pydantic import (BaseModel, ConfigDict, Field, PostgresDsn,
+                      UrlConstraints, field_validator, model_validator)
 from pydantic_core import Url
 
 from stats.models import Indicator, IndicatorData
@@ -114,8 +114,7 @@ class Indicators(BaseModel):
     meta: Dict[str, Indicator]
     data: Dict[Tuple[str, datetime], IndicatorData]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class QueryResultData(BaseModel):
@@ -124,8 +123,7 @@ class QueryResultData(BaseModel):
     actual: float = Field(title="Actual")
     forecast: Optional[float] = Field(title="Forecast")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class QueryResult(BaseModel):
@@ -133,7 +131,7 @@ class QueryResult(BaseModel):
 
     data: List[QueryResultData]
 
-    def csv(self):
+    def model_dump_csv(self):
         result = [
             "{},{},{},{}".format(
                 self.data[0].__fields__.get("date").title,
@@ -147,7 +145,7 @@ class QueryResult(BaseModel):
             result.append(f"{row.date},{row.ticker},{row.actual},{row.forecast}")
         return "\n".join(result)
 
-    def text(self):
+    def model_dump_text(self):
         result = [
             "{:<8}\t{:<8}\t{:<8}\t{}".format(
                 self.data[0].__fields__.get("date").title,

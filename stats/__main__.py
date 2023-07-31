@@ -20,7 +20,7 @@ async def main(settings: Settings):
             date_end=settings.date_end,
         )
 
-        format = {"csv": events.csv, "json": events.json, "text": events.text}[settings.format]
+        format = {"csv": events.model_dump_csv, "json": events.model_dump_json, "text": events.model_dump_text}[settings.format]
         print(format())
     except Exception as e:
         sys.exit(e)
