@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 import aiohttp
 from pydantic import ValidationError
 
 from .enums import Country
 from .logger import log
-from .models import Indicator, IndicatorData
 from .schemas import DataProviderResult, Event
 
 

@@ -1,22 +1,19 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Dict, List, Optional, Tuple
 
-from pydantic import (BaseModel, Field, FieldValidationInfo, PostgresDsn,
-                      UrlConstraints, field_validator, model_validator)
-from pydantic_core import MultiHostUrl, Url
+from pydantic import (BaseModel, Field, PostgresDsn, UrlConstraints,
+                      field_validator, model_validator)
+from pydantic_core import Url
 
 from stats.models import Indicator, IndicatorData
 
-from .enums import Country, Currency, Period
+from .enums import Country, Currency, OutputFormat, Period
 
 SQLiteDsn = Annotated[
     Url,
     UrlConstraints(
         host_required=False,
-        allowed_schemes=[
-            "sqlite",
-            "sqlite3",
-        ],
+        allowed_schemes=["sqlite", "sqlite3", "sqlite+aiosqlite"],
     ),
 ]
 
@@ -24,42 +21,34 @@ SQLiteDsn = Annotated[
 class Settings(BaseModel):
     """Validates CLI arguments."""
 
-    storage: PostgresDsn | str  # TODO: replace str with SQLiteDsn
+    storage: Optional[
+        PostgresDsn | SQLiteDsn
+    ] = "sqlite+aiosqlite:///stats.db"  # TODO: replace str with SQLiteDsn
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None
-    days: Optional[int] = None
+    days: int = Field(default=1, ge=0)
+    format: OutputFormat = OutputFormat.TEXT
 
     @model_validator(mode="after")
     def parse_days(self):
-        """If days is specified, calculate date_start and date_end.
+        """Calculate date ranges based on days and starting point.
 
-        If days is a positive number, then set date range to future, otherwise to past.
-        If date_start is defined, then calculate date_end based on days.
-        If date_end is defined, then calculate date_start based on days.
-        If both date_start and date_end are defined, then calculate days.
+        if date_start is set, date_end will be calculated based on date_start + days.
+        if date_end is set, date_start will be calculated based on date_end - days.
+        If both date_start and date_end are set, days will be calculated based on date_end - date_start.
+        If none of them are set, date_end will be set to current date and date_start will be calculated based on date_end - days.
         """
         if self.date_start and self.date_end:
             self.days = (self.date_end - self.date_start).days
-        elif self.days is not None:
-            if self.days > 0:
-                # todo: don't confuse user with positive/negative days,
-                #       just use date_start and date_end to understand direction.
-                #       days + date_end will fetch past events, days + date_start - upcoming
-                if self.date_start:
-                    self.date_end = self.date_start + timedelta(days=self.days)
-                elif self.date_end:
-                    self.date_start = self.date_end - timedelta(days=self.days)
-                else:
-                    self.date_start = datetime.utcnow()
-                    self.date_end = self.date_start + timedelta(days=self.days)
-            else:
-                if self.date_start:
-                    self.date_end = self.date_start - timedelta(days=self.days * -1)
-                elif self.date_end:
-                    self.date_start = self.date_end - timedelta(days=self.days * -1)
-                else:
-                    self.date_end = datetime.utcnow()
-                    self.date_start = self.date_end - timedelta(days=self.days * -1)
+            return self
+
+        if self.date_start and self.days:
+            self.date_end = self.date_start + timedelta(days=self.days)
+        elif self.date_end and self.days:
+            self.date_start = self.date_end - timedelta(days=self.days)
+        elif not self.date_start and not self.date_end:
+            self.date_end = datetime.utcnow()
+            self.date_start = self.date_end - timedelta(days=self.days)
 
         return self
 
@@ -89,14 +78,15 @@ class Event(BaseModel):
     indicator: str
     period: Optional[Period] = None
     scale: Optional[str] = None
-    source: str
+    source: Optional[str] = None
     title: str
     ticker: str
     unit: Optional[str] = None
 
     @model_validator(mode="before")
     def fix_ticker(values: dict):
-        # if ticker is not specified, then generate it by combining the first letter of each word in title
+        # if ticker is not specified, then generate it.
+        # Take the first letter of each word in a title
         if not values.get("ticker"):
             values["ticker"] = (
                 values.get("country")
@@ -126,3 +116,50 @@ class Indicators(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class QueryResultData(BaseModel):
+    ticker: str = Field(title="Ticker")
+    date: datetime = Field(title="Date")
+    actual: float = Field(title="Actual")
+    forecast: Optional[float] = Field(title="Forecast")
+
+    class Config:
+        from_attributes = True
+
+
+class QueryResult(BaseModel):
+    """Result of query."""
+
+    data: List[QueryResultData]
+
+    def csv(self):
+        result = [
+            "{},{},{},{}".format(
+                self.data[0].__fields__.get("date").title,
+                self.data[0].__fields__.get("ticker").title,
+                self.data[0].__fields__.get("actual").title,
+                self.data[0].__fields__.get("forecast").title,
+            )
+        ]
+
+        for row in self.data:
+            result.append(f"{row.date},{row.ticker},{row.actual},{row.forecast}")
+        return "\n".join(result)
+
+    def text(self):
+        result = [
+            "{:<8}\t{:<8}\t{:<8}\t{}".format(
+                self.data[0].__fields__.get("date").title,
+                self.data[0].__fields__.get("ticker").title,
+                self.data[0].__fields__.get("actual").title,
+                self.data[0].__fields__.get("forecast").title,
+            )
+        ]
+        for row in self.data:
+            result.append(
+                "{}\t{:<8}\t{:<8}\t{}".format(
+                    row.date.strftime("%d/%m %H:%M"), row.ticker, row.actual, row.forecast
+                )
+            )
+        return "\n".join(result)

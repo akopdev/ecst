@@ -2,14 +2,13 @@ import argparse
 import asyncio
 import os
 import sys
+import tempfile
 
 from pydantic import ValidationError
 
-from .storages import Storage
-
-from .schemas import Settings
 from . import __version__
-import tempfile
+from .schemas import Settings
+from .storages import Storage
 
 
 async def main(settings: Settings):
@@ -21,18 +20,22 @@ async def main(settings: Settings):
             date_end=settings.date_end,
         )
 
-        # print("{}\t{:<8}\t{:<8}".format(event.date, event.ticker, event.actual))
+        format = {"csv": events.csv, "json": events.json, "text": events.text}[settings.format]
+        print(format())
     except Exception as e:
         sys.exit(e)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Economic indicators")
+    parser = argparse.ArgumentParser(
+        description="Economic indicators",
+        argument_default=argparse.SUPPRESS
+    )
     parser.add_argument(
         "--storage",
-        help="Specify DSN string to connect external data storage. "
-        "Support environment variable `STORAGE`",
-        default=os.environ.get("STATS_STORAGE") or f"sqlite+aiosqlite:///stats.db",
+        help="Specify DSN string to connect to external data storage. "
+        "Support environment variable `STATS_STORAGE`",
+        # default=os.environ.get("STATS_STORAGE"),
     )
     parser.add_argument(
         "--date-start",
@@ -43,6 +46,7 @@ if __name__ == "__main__":
         help="Fetch data till provided date (ex 2023-01-19, 2023-01-19T10:30:00)",
     )
     parser.add_argument("--days", help="Calculate date range based on number of days", type=int)
+    parser.add_argument("--format", help="Output format (csv, json, text)")
     parser.add_argument(
         "--version", help="Print current version and exit", action="version", version=__version__
     )
@@ -51,6 +55,11 @@ if __name__ == "__main__":
         args = parser.parse_args()
         settings = Settings(**vars(args))
     except ValidationError as e:
-        sys.exit(e.errors(include_url=False, include_context=False)[0].get("msg"))
+        error = e.errors(include_url=False, include_context=False)[0]
+        sys.exit(
+            "Wrong argument value passed ({}): {}".format(
+                error.get("loc", ("system",))[0], error.get("msg")
+            )
+        )
 
     asyncio.run(main(settings))

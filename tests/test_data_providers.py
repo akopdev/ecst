@@ -3,8 +3,8 @@ from datetime import datetime
 
 import pytest
 from aioresponses import aioresponses
-
 from stats.providers import DataProvider
+
 from stats.schemas import Event
 
 
@@ -68,11 +68,11 @@ def tradingview_sample_response():
 
 
 @pytest.mark.asyncio()
-async def test_data_provider_is_matching_event_schema(tradingview_sample_response: dict):
+async def test_data_provider_is_matching_event_schema(dsn: str, tradingview_sample_response: dict):
     """
     Test if `extract` method is returning a list of Event objects
     """
-    provider = DataProvider("mongodb://localhost:27017/fake")
+    provider = DataProvider()
     date = datetime.today()
 
     with aioresponses() as m:
@@ -82,20 +82,21 @@ async def test_data_provider_is_matching_event_schema(tradingview_sample_respons
             payload=tradingview_sample_response,
             status=200,
         )
-        events = await provider.extract(date, date)
+        events = await provider.fetch(date, date)
         assert len(events) == 3
         assert all([isinstance(event, Event) for event in events])
 
 
 @pytest.mark.asyncio()
-async def test_data_provider_validation_fail(tradingview_sample_response: dict):
+async def test_data_provider_validation_fail(dsn: str, tradingview_sample_response: dict):
     """
     Test if `extract` method is returning False if validation fails
     """
     tradingview_sample_response["result"][0]["actual"] = "invalid"
 
-    provider = DataProvider("mongodb://localhost:27017/fake")
-    date = datetime.utcnow()
+    provider = DataProvider()
+
+    date = datetime.today()
     with aioresponses() as m:
         pattern = re.compile(r"^https://economic-calendar\.tradingview\.com/events\?.*")
         m.get(
@@ -103,17 +104,7 @@ async def test_data_provider_validation_fail(tradingview_sample_response: dict):
             payload=tradingview_sample_response,
             status=200,
         )
-        events = await provider.extract(date, date)
+        events = await provider.fetch(date, date)
         assert not events
 
 
-@pytest.mark.asyncio()
-def test_data_provider_transform_event_to_indicator(tradingview_sample_response: dict):
-    """
-    Test if `transform` method is returning an Indicator object
-    """
-    event = Event(**tradingview_sample_response["result"][2])
-    provider = DataProvider("mongodb://localhost:27017/fake")
-    indicator = provider.transform(event)
-    assert indicator.country.value == "AU"
-    assert indicator.data.actual.value == 5.9

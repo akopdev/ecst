@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 from pydantic import PostgresDsn
 from sqlalchemy import select
@@ -10,7 +10,7 @@ from .enums import Country
 from .logger import log
 from .models import BaseModel, Indicator, IndicatorData
 from .providers import DataProvider
-from .schemas import Event, Indicators, SQLiteDsn
+from .schemas import Event, Indicators, QueryResult, QueryResultData, SQLiteDsn
 
 
 class Storage(DataProvider):
@@ -28,11 +28,12 @@ class Storage(DataProvider):
         date_start: datetime,
         date_end: datetime,
         countries: List[Country] = [],
-    ):
+    ) -> QueryResult:
         """
-        Query data storage for events in period, and merge them with data from providers.
+        Query data storage for events in period.
 
-        Fetch indicators from providers, transform them to models and merge with existing data in storage.
+        Fetch indicators from providers, transform them to models
+        and merge with existing data in storage.
         """
         log.info(
             f"Querying data storage for events in period {date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}"
@@ -70,6 +71,29 @@ class Storage(DataProvider):
                     # add new data
                     session.add_all([data for data in indicators.data.values()])
 
+        # query data from Storage
+        async with self.session() as session:
+            async with session.begin():
+                q = (
+                    select(IndicatorData)
+                    .filter(
+                        IndicatorData.date.between(date_start, date_end),
+                        IndicatorData.ticker.in_(tickers),
+                    )
+                    .order_by(IndicatorData.date)
+                )
+                result = await session.execute(q)
+                return QueryResult(
+                    data=[
+                        QueryResultData(
+                            ticker=data.ticker,
+                            date=data.date,
+                            actual=data.actual,
+                            forecast=data.forecast,
+                        )
+                        for data in result.scalars().all()
+                    ]
+                )
 
     async def transform(self, events: List[Event]) -> Indicators:
         """Transform events into indicators.
@@ -90,8 +114,8 @@ class Storage(DataProvider):
                         **event.dict(exclude_unset=True, exclude={"actual", "forecast", "date"})
                     )
                     # We use a combination of ticker and date as a primary key while comparing
-                    # with already stored data. However, sqlalchemy returns datetime without timezone,
-                    # so we need to remove it.
+                    # with already stored data. However, sqlalchemy returns datetime without tzinfo,
+                    # so we need to remove it from pydantic model as well.
                     index = (
                         event.ticker,
                         event.date.replace(tzinfo=None),
