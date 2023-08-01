@@ -6,7 +6,7 @@ RUN apk add python-${version} py${version}-pip
 # Intermediate layer
 FROM base as builder
 
-COPY . ./
+COPY . .
 
 RUN pip install wheel
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /root/wheels -e .
