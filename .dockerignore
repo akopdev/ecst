@@ -1,0 +1,17 @@
+# Git
+.git
+.gitignore
+
+# CI
+.github
+Makefile
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Dev
+.flake8
+README.md
+tests/

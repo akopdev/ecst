@@ -51,6 +51,7 @@ class Currency(str, Enum):
     USD = "USD"
     JPY = "JPY"
 
+
 class OutputFormat(str, Enum):
     JSON = "json"
     CSV = "csv"

@@ -6,13 +6,17 @@ RUN apk add python-${version} py${version}-pip
 # Intermediate layer
 FROM base as builder
 
-COPY . /root/code
+COPY . ./
 
-RUN pip install build
-RUN pip install -e /root/code
+RUN pip install wheel
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /root/wheels -e .
+RUN python setup.py bdist_wheel --dist-dir /root/wheels
 
 # Production
+FROM base as final
 
-WORKDIR /app
+COPY --from=builder /root/wheels /wheels
+
+RUN pip install --no-cache /wheels/*
 
 CMD ["stats"]
