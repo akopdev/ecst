@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict, List, Tuple
 
 import pytest
 
@@ -23,6 +24,17 @@ sample_event = {
     "date": "2023-07-26T01:30:00.000Z",
 }
 
+sample_dates_to_sync = [
+    (
+        (datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 26, 1, 30)),
+        [(datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 26, 1, 30))],
+    ),
+    (
+        (datetime(2023, 7, 24, 2), datetime(2023, 7, 28, 1, 30)),
+        [(datetime(2023, 7, 24, 2), datetime(2023, 7, 26, 1, 30)), (datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 28, 1, 30))],
+    )
+]
+
 
 @pytest.mark.asyncio()
 async def test_transform_event_to_indicator(dsn: str):
@@ -34,4 +46,28 @@ async def test_transform_event_to_indicator(dsn: str):
     await storage.connect()
     indicators = await storage.transform([event])
     assert indicators.meta["AUCIR"].country == "AU"
-    assert indicators.data[("AUCIR", datetime(2023, 7, 26, 1, 30),)].actual == 5.9
+    assert (
+        indicators.data[
+            (
+                "AUCIR",
+                datetime(2023, 7, 26, 1, 30),
+            )
+        ].actual
+        == 5.9
+    )
+
+
+@pytest.mark.parametrize("dates, expected", sample_dates_to_sync)
+@pytest.mark.asyncio()
+async def test_dates_to_sync(
+    dates: Tuple[datetime, datetime],
+    expected: List[Tuple[datetime, datetime]],
+    dsn: str,
+    populate_db: Dict,
+):
+    """date_to_sync should return a list of tuples that contains range of dates to sync"""
+    storage = Storage(dsn)
+    await storage.connect()
+    result = await storage.dates_to_sync(dates[0], dates[1])
+    print(result)
+    assert result == expected
