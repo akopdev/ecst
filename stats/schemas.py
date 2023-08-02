@@ -26,6 +26,14 @@ class Settings(BaseModel):
     date_end: Optional[datetime] = None
     days: int = Field(default=1, ge=0)
     format: OutputFormat = Field(default=OutputFormat.TEXT)
+    countries: Optional[List[Country]] = []
+
+    @model_validator(mode="before")
+    def parse_countries(values: dict):
+        """Parse countries from comma separated string."""
+        if isinstance(values.get("countries"), str):
+            values["countries"] = values.get("countries").split(",")
+        return values
 
     @model_validator(mode="after")
     def parse_days(self):

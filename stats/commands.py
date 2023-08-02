@@ -21,6 +21,7 @@ async def query_indicators(settings: Settings):
         result = await storage.query(
             date_start=settings.date_start,
             date_end=settings.date_end,
+            countries=settings.countries,
         )
         format(result, settings.format)
     except Exception as e:

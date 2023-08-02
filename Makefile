@@ -3,7 +3,8 @@
 .PHONY: all build		 # All targets are accessible for user
 .DEFAULT: help 			 # Running Make will run the help target
 
-PYTHON = .venv/bin/python -m
+PY = .venv/bin/python
+PYTHON = $(PY) -m
 APP = stats
 
 # -------------------------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ lint.docs:
 #  build: @ Build container
 #  -------------------------------------------------------------------------------------------------
 build:
-	@docker build -t $(APP):latest -t $(APP):$$($(PYTHON) setup --version) .
+	@docker build -t $(APP):latest -t $(APP):$$($(PY) setup --version) .
 
 # -------------------------------------------------------------------------------------------------
 #  clean: @ Clean up local environment

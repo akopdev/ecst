@@ -63,6 +63,9 @@ class Storage(DataProvider):
                     )
                     .order_by(IndicatorData.date)
                 )
+                if countries:
+                    q = q.join(Indicator).filter(Indicator.country.in_(countries))
+
                 result = await session.execute(q)
                 return QueryResult(
                     data=[

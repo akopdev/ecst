@@ -33,6 +33,8 @@ class DataProvider:
                 res = await resp.json()
                 try:
                     events = DataProviderResult(**res).result
+                    if not events:
+                        return []
                 except ValidationError as error:
                     log.error("Error while parsing data: {}".format(str(error)))
                     return False

@@ -45,6 +45,10 @@ def main():
     query_parser.add_argument(
         "--days", help="Calculate date range based on number of days", type=int
     )
+    query_parser.add_argument(
+        "--countries", help="Fetch data related to particular countries", type=str
+    )
+
     query_parser.set_defaults(func=query_indicators)
 
     # List command
