@@ -33,7 +33,7 @@ async def list_indicators(settings: Settings):
     try:
         storage = Storage(settings.storage)
         await storage.connect()
-        result = await storage.list()
+        result = await storage.list(settings.countries)
         format(result, settings.format)
     except Exception as e:
         sys.exit(e)

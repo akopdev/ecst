@@ -24,11 +24,13 @@ class Storage(DataProvider):
         async with self.engine.begin() as conn:
             await conn.run_sync(BaseModel.metadata.create_all)
 
-    async def list(self) -> ListResult:
+    async def list(self, countries: List[Country] = []) -> ListResult:
         """List all available indicators."""
         async with self.session() as session:
             async with session.begin():
                 q = select(Indicator)
+                if countries:
+                    q = q.filter(Indicator.country.in_(countries))
                 result = await session.execute(q)
                 return ListResult(data=result.scalars().all() or [])
 

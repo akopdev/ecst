@@ -54,6 +54,10 @@ def main():
     # List command
     list_parser = commands.add_parser("list", help="List pre-fetched indicators", argument_default=argparse.SUPPRESS)
     list_parser.set_defaults(func=list_indicators)
+    list_parser.add_argument(
+        "--countries", help="Fetch data related to particular countries", type=str
+    )
+
 
     try:
         args = parser.parse_args()
