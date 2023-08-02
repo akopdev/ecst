@@ -11,7 +11,7 @@ from .enums import Country
 from .logger import log
 from .models import BaseModel, Indicator, IndicatorData
 from .providers import DataProvider
-from .schemas import Event, Indicators, QueryResult, QueryResultData, SQLiteDsn
+from .schemas import Event, Indicators, QueryResult, QueryResultData, SQLiteDsn, ListResult
 
 
 class Storage(DataProvider):
@@ -23,6 +23,14 @@ class Storage(DataProvider):
         log.info("Connecting to data storage ...")
         async with self.engine.begin() as conn:
             await conn.run_sync(BaseModel.metadata.create_all)
+
+    async def list(self) -> ListResult:
+        """List all available indicators."""
+        async with self.session() as session:
+            async with session.begin():
+                q = select(Indicator)
+                result = await session.execute(q)
+                return ListResult(data=result.scalars().all() or [])
 
     async def query(
         self,

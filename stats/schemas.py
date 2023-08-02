@@ -21,13 +21,11 @@ SQLiteDsn = Annotated[
 class Settings(BaseModel):
     """Validates CLI arguments."""
 
-    storage: Optional[
-        PostgresDsn | SQLiteDsn
-    ] = "sqlite+aiosqlite:///stats.db"  # TODO: replace str with SQLiteDsn
+    storage: Optional[PostgresDsn | SQLiteDsn] = Field(default="sqlite+aiosqlite:///stats.db")
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None
     days: int = Field(default=1, ge=0)
-    format: OutputFormat = OutputFormat.TEXT
+    format: OutputFormat = Field(default=OutputFormat.TEXT)
 
     @model_validator(mode="after")
     def parse_days(self):
@@ -127,9 +125,9 @@ class QueryResultData(BaseModel):
 
 
 class QueryResult(BaseModel):
-    """Result of query."""
+    """Result of query command."""
 
-    data: List[QueryResultData]
+    data: Optional[List[QueryResultData]] = Field(default_factory=list)
 
     def model_dump_csv(self):
         result = [
@@ -158,6 +156,73 @@ class QueryResult(BaseModel):
             result.append(
                 "{}\t{:<8}\t{:<8}\t{}".format(
                     row.date.strftime("%d/%m %H:%M"), row.ticker, row.actual, row.forecast
+                )
+            )
+        return "\n".join(result)
+
+
+class ListResultData(BaseModel):
+    country: Country = Field(title="Country")
+    currency: Currency = Field(title="Currency")
+    indicator: str = Field(title="Indicator")
+    scale: Optional[str] = Field(title="Scale")
+    ticker: str = Field(title="Ticker")
+    title: str = Field(title="Title")
+    unit: Optional[str] = Field(title="Unit")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListResult(BaseModel):
+    """Result of list command."""
+
+    data: Optional[List[ListResultData]] = Field(default_factory=list)
+
+    def model_dump_csv(self):
+        result = [
+            "{},{},{},{},{},{},{}".format(
+                ListResultData.__fields__.get("country").title,
+                ListResultData.__fields__.get("currency").title,
+                ListResultData.__fields__.get("indicator").title,
+                ListResultData.__fields__.get("scale").title,
+                ListResultData.__fields__.get("ticker").title,
+                ListResultData.__fields__.get("title").title,
+                ListResultData.__fields__.get("unit").title,
+            )
+        ]
+
+        for row in self.data:
+            result.append(
+                "{},{},{},{},{},{},{}".format(
+                    row.country,
+                    row.currency,
+                    row.indicator,
+                    row.scale,
+                    row.ticker,
+                    row.title,
+                    row.unit,
+                )
+            )
+        return "\n".join(result)
+
+    def model_dump_text(self):
+        result = [
+            "{:<8}\t{}\t{:<8}\t{:<34}\t{}".format(
+                ListResultData.__fields__.get("ticker").title,
+                ListResultData.__fields__.get("country").title,
+                ListResultData.__fields__.get("currency").title,
+                ListResultData.__fields__.get("title").title,
+                ListResultData.__fields__.get("indicator").title,
+            )
+        ]
+        for row in self.data:
+            result.append(
+                "{:<8}\t{}\t{:<8}\t{:<34}\t{}".format(
+                    row.ticker,
+                    row.country.value,
+                    row.currency.value,
+                    row.title,
+                    row.indicator,
                 )
             )
         return "\n".join(result)

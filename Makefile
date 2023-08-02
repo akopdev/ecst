@@ -1,9 +1,10 @@
 .NOTPARALLEL: ;          # wait for this target to finish
 .EXPORT_ALL_VARIABLES: ; # send all vars to shell
-.PHONY: all 			 # All targets are accessible for user
+.PHONY: all build		 # All targets are accessible for user
 .DEFAULT: help 			 # Running Make will run the help target
 
-PYTHON = @.venv/bin/python -m
+PYTHON = .venv/bin/python -m
+APP = stats
 
 # -------------------------------------------------------------------------------------------------
 # help: @ List available tasks on this project
@@ -46,8 +47,8 @@ test:
 # format: @ Format source code and auto fix minor issues
 # -------------------------------------------------------------------------------------------------
 format:
-	$(PYTHON) black --line-length=100 stats
-	$(PYTHON) isort stats
+	$(PYTHON) black --line-length=100 $(APP)
+	$(PYTHON) isort $(APP)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ lint.flake8:
 	$(PYTHON) flake8 --exclude=.venv,.eggs,*.egg,.git,migrations \
 									 --filename=*.py,*.pyx \
 									 --config=.flake8 \
-									 stats
+									 $(APP)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ lint.docs:
 #  build: @ Build container
 #  -------------------------------------------------------------------------------------------------
 build:
-	@docker build -t stats:latest .
+	@docker build -t $(APP):latest -t $(APP):$$($(PYTHON) setup --version) .
 
 # -------------------------------------------------------------------------------------------------
 #  clean: @ Clean up local environment

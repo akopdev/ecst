@@ -19,4 +19,8 @@ COPY --from=builder /root/wheels /wheels
 
 RUN pip install --no-cache /wheels/*
 
+RUN rm -rf /wheels
+
+WORKDIR /app
+
 CMD ["stats"]
