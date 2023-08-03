@@ -26,24 +26,22 @@ sample_event = {
 
 sample_dates_to_sync = [
     (
-        (datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 26, 1, 30)),
-        [(datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 26, 1, 30))],
+        (datetime(2023, 7, 24, 1, 30), datetime(2023, 7, 24, 18, 30)),
+        [(datetime(2023, 7, 24, 1, 30), datetime(2023, 7, 24, 18, 30))],
     ),
     (
         (datetime(2023, 7, 24, 2), datetime(2023, 7, 28, 1, 30)),
-        [(datetime(2023, 7, 24, 2), datetime(2023, 7, 26, 1, 30)), (datetime(2023, 7, 26, 1, 30), datetime(2023, 7, 28, 1, 30))],
+        [(datetime(2023, 7, 24, 2, 0), datetime(2023, 7, 26, 1, 30)), (datetime(2023, 7, 26, 18, 30), datetime(2023, 7, 28, 1, 30))],
     )
 ]
 
 
 @pytest.mark.asyncio()
-async def test_transform_event_to_indicator(dsn: str):
+async def test_transform_event_to_indicator(storage: Storage):
     """
     Test if `transform` method is returning an Indicator object
     """
     event = Event(**sample_event)
-    storage = Storage(dsn)
-    await storage.connect()
     indicators = await storage.transform([event])
     assert indicators.meta["AUCIR"].country == "AU"
     assert (
@@ -62,12 +60,12 @@ async def test_transform_event_to_indicator(dsn: str):
 async def test_dates_to_sync(
     dates: Tuple[datetime, datetime],
     expected: List[Tuple[datetime, datetime]],
-    dsn: str,
+    storage: Storage,
     populate_db: Dict,
 ):
     """date_to_sync should return a list of tuples that contains range of dates to sync"""
-    storage = Storage(dsn)
-    await storage.connect()
     result = await storage.dates_to_sync(dates[0], dates[1])
-    print(result)
+
+    print("dates", dates)
+    print("result", result)
     assert result == expected

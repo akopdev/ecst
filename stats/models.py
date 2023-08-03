@@ -34,6 +34,5 @@ class Indicator(BaseModel):
     indicator: Mapped[str]
     period: Mapped[Optional[str]]
     scale: Mapped[Optional[str]]
-    source: Mapped[str]
     title: Mapped[str]
     unit: Mapped[Optional[str]]

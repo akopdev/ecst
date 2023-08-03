@@ -68,7 +68,7 @@ def tradingview_sample_response():
 
 
 @pytest.mark.asyncio()
-async def test_data_provider_is_matching_event_schema(dsn: str, tradingview_sample_response: dict):
+async def test_data_provider_is_matching_event_schema(tradingview_sample_response: dict):
     """
     Test if `extract` method is returning a list of Event objects
     """
@@ -88,7 +88,7 @@ async def test_data_provider_is_matching_event_schema(dsn: str, tradingview_samp
 
 
 @pytest.mark.asyncio()
-async def test_data_provider_validation_fail(dsn: str, tradingview_sample_response: dict):
+async def test_data_provider_validation_fail(tradingview_sample_response: dict):
     """
     Test if `extract` method is returning False if validation fails
     """

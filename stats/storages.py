@@ -110,32 +110,33 @@ class Storage(DataProvider):
                     return [(date_start, date_end)]
 
     def calculate_non_overlapping_ranges(
-        self, start: Tuple[datetime, datetime], end: Tuple[datetime, datetime]
+        self, existing_dates: Tuple[datetime, datetime], requested_dates: Tuple[datetime, datetime]
     ) -> List[Tuple[datetime, datetime]]:
         """
         Calculate the overlap between the two ranges of dates.
 
         Returns a list of non-overlapping ranges.
         """
-        overlap_start = max(start[0], end[0])
-        overlap_end = min(start[1], end[1])
+        overlap_start = max(existing_dates[0], requested_dates[0])
+        overlap_end = min(existing_dates[1], requested_dates[1])
 
         # Check if there is any overlap
         if overlap_start < overlap_end:
             # There is overlap, so return the non-overlapping ranges
             non_overlapping_ranges = []
-            if start[0] < end[0]:
-                non_overlapping_ranges.append((start[0], overlap_start))
+            if existing_dates[0] < requested_dates[0]:
+                non_overlapping_ranges.append((existing_dates[0], overlap_start))
             else:
-                non_overlapping_ranges.append((end[0], overlap_start))
-            if start[1] > end[1]:
-                non_overlapping_ranges.append((overlap_end, start[1]))
+                non_overlapping_ranges.append((requested_dates[0], overlap_start))
+            if existing_dates[1] > requested_dates[1]:
+                non_overlapping_ranges.append((overlap_end, existing_dates[1]))
             else:
-                non_overlapping_ranges.append((overlap_end, end[1]))
+                non_overlapping_ranges.append((overlap_end, requested_dates[1]))
+
             return non_overlapping_ranges
         else:
             # There is no overlap, so just return the original ranges
-            return [(start[0], start[1]), (end[0], end[1])]
+            return [requested_dates]
 
     async def sync(
         self, date_start: datetime, date_end: datetime, countries: List[Country] = []

@@ -84,7 +84,6 @@ class Event(BaseModel):
     indicator: str
     period: Optional[Period] = None
     scale: Optional[str] = None
-    source: Optional[str] = None
     title: str
     ticker: str
     unit: Optional[str] = None
