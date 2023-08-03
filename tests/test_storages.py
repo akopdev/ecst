@@ -4,9 +4,7 @@ from typing import Dict, List, Tuple
 
 import pytest
 from aioresponses import aioresponses
-from sqlalchemy import select
 
-from stats.models import Indicator
 from stats.schemas import Event
 from stats.storages import Storage
 
