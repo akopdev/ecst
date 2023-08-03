@@ -11,7 +11,8 @@ from .enums import Country
 from .logger import log
 from .models import BaseModel, Indicator, IndicatorData
 from .providers import DataProvider
-from .schemas import Event, Indicators, QueryResult, QueryResultData, SQLiteDsn, ListResult
+from .schemas import (Event, Indicators, ListResult, QueryResult,
+                      QueryResultData, SQLiteDsn)
 
 
 class Storage(DataProvider):
@@ -46,9 +47,7 @@ class Storage(DataProvider):
         Fetch indicators from providers, transform them to models
         and merge with existing data in storage.
         """
-        log.info(
-            f"Querying data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}"
-        )
+        log.info(f"Querying data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}")
 
         # get only dates that are not in storage
         dates = await self.dates_to_sync(date_start, date_end)
@@ -148,7 +147,19 @@ class Storage(DataProvider):
         """
         # fetch remote events
         events = await self.fetch(date_start, date_end, countries)
-        indicators = await self.transform(events)
+        if events:
+            indicators = await self.transform(events)
+            return await self.update(indicators, date_start, date_end)
+        return []
+
+    async def update(
+        self, indicators: Indicators, date_start: datetime, date_end: datetime
+    ) -> List[str]:
+        """
+        Update data storage with new indicators.
+
+        Returns list of tickers that were updated.
+        """
 
         tickers = list(indicators.meta.keys())
         async with self.session() as session:
@@ -163,7 +174,6 @@ class Storage(DataProvider):
                             await session.merge(indicators.meta.pop(ind[0]))
                     session.add_all(indicators.meta.values())
 
-                if tickers:
                     # Pull range of data for existing tickers and update with new values
                     q = select(IndicatorData.ticker, IndicatorData.date).filter(
                         IndicatorData.ticker.in_(tickers),

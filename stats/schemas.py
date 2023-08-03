@@ -108,7 +108,7 @@ class DataProviderResult(BaseModel):
     """TradingView API response."""
 
     status: str
-    result: Optional[List[Event]] = None
+    result: Optional[List[Event]] = []
 
 
 class Indicators(BaseModel):

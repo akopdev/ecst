@@ -8,6 +8,7 @@ from stats.providers import DataProvider
 from stats.schemas import Event
 
 
+
 @pytest.fixture()
 def tradingview_sample_response():
     return {
