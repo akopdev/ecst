@@ -93,7 +93,7 @@ lint.docs:
 #  build: @ Build container
 #  -------------------------------------------------------------------------------------------------
 build:
-	@docker build -t $(APP):latest -t $(APP):$$($(PY) setup --version) .
+	@docker build -t $(APP):latest -t $(APP):$$($(PY) -m setup --version) .
 
 # -------------------------------------------------------------------------------------------------
 #  clean: @ Clean up local environment
