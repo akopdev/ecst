@@ -9,6 +9,7 @@ setup(
     install_requires=["aiohttp", "pydantic>=2.0.0", "sqlalchemy[asyncio]", "aiosqlite"],
     extras_require={
         "dev": [
+            "setuptools>65.5.0",
             "flake8",
             "pydocstyle",
             "piprot",
