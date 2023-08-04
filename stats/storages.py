@@ -26,7 +26,7 @@ class Storage(DataProvider):
             await conn.run_sync(BaseModel.metadata.create_all)
 
     async def list(self, countries: List[Country] = []) -> ListResult:
-        """List all available indicators."""
+        """List of all available indicators."""
         async with self.session() as session:
             async with session.begin():
                 q = select(Indicator)
@@ -143,7 +143,7 @@ class Storage(DataProvider):
         """
         Sync data storage with remote providers.
 
-        Returns list of tickers that were updated.
+        Returns a list of tickers that were updated.
         """
         # fetch remote events
         events = await self.fetch(date_start, date_end, countries)
@@ -155,12 +155,10 @@ class Storage(DataProvider):
     async def update(
         self, indicators: Indicators, date_start: datetime, date_end: datetime
     ) -> List[str]:
-        """
-        Update data storage with new indicators.
+        """Update data storage with new indicators.
 
-        Returns list of tickers that were updated.
+        Returns a list of tickers that were created or modified.
         """
-
         tickers = list(indicators.meta.keys())
         async with self.session() as session:
             async with session.begin():
@@ -194,10 +192,8 @@ class Storage(DataProvider):
             - Indicator: meta data about particular indicator (always unique)
             - IndicatorData: forecast and actual data for particular date (not unique)
 
-        Returns:
-            Structure of indicators, that contains meta data and referenced metrics.
+        Returns dictionary that contains meta data and referenced metrics.
         """
-
         result = {"meta": {}, "data": defaultdict(IndicatorData)}
         for event in events:
             if event.actual:

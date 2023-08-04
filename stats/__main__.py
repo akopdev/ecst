@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import os
 import sys
 
 from pydantic import ValidationError
@@ -17,9 +16,7 @@ def main():
     # Global arguments
     parser.add_argument(
         "--storage",
-        help="Database connection string. "
-        "Support environment variable `STATS_STORAGE`",
-        # default=os.environ.get("STATS_STORAGE"),
+        help="Database connection string. " "Support environment variable `STATS_STORAGE`",
     )
     parser.add_argument(
         "--version",
@@ -33,7 +30,11 @@ def main():
     commands = parser.add_subparsers(title="Commands", dest="command")
 
     # Query command
-    query_parser = commands.add_parser("query", help="Get indicator data for specified date range", argument_default=argparse.SUPPRESS)
+    query_parser = commands.add_parser(
+        "query",
+        help="Get indicator data for specified date range",
+        argument_default=argparse.SUPPRESS,
+    )
     query_parser.add_argument(
         "--date-start",
         help="Fetch data starting from this date (2023-01-19, 2023-01-19T10:30:00)",
@@ -52,12 +53,13 @@ def main():
     query_parser.set_defaults(func=query_indicators)
 
     # List command
-    list_parser = commands.add_parser("list", help="List pre-fetched indicators", argument_default=argparse.SUPPRESS)
+    list_parser = commands.add_parser(
+        "list", help="List pre-fetched indicators", argument_default=argparse.SUPPRESS
+    )
     list_parser.set_defaults(func=list_indicators)
     list_parser.add_argument(
         "--countries", help="Fetch data related to particular countries", type=str
     )
-
 
     try:
         args = parser.parse_args()

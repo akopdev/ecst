@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Annotated, Dict, List, Optional, Tuple
 
@@ -21,7 +22,9 @@ SQLiteDsn = Annotated[
 class Settings(BaseModel):
     """Validates CLI arguments."""
 
-    storage: Optional[PostgresDsn | SQLiteDsn] = Field(default="sqlite+aiosqlite:///stats.db")
+    storage: Optional[PostgresDsn | SQLiteDsn] = Field(
+        default=os.environ.get("STATS_STORAGE", "sqlite+aiosqlite:///:memory:")
+    )
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None
     days: int = Field(default=1, ge=0)
@@ -39,10 +42,12 @@ class Settings(BaseModel):
     def parse_days(self):
         """Calculate date ranges based on days and starting point.
 
-        if date_start is set, date_end will be calculated based on date_start + days.
-        if date_end is set, date_start will be calculated based on date_end - days.
-        If both date_start and date_end are set, days will be calculated based on date_end - date_start.
-        If none of them are set, date_end will be set to current date and date_start will be calculated based on date_end - days.
+        1. If date_start is set, date end will be calculated based on `date_start + days`.
+        2. If date_end is set, date_start will be calculated based on `date_end - days`.
+        3. If both date_start and date_end are set, days will be calculated based on
+           `date_end - date_start`.
+        4. If none of them are set, date_end will be set to current datetime,
+           and date_start will be calculated based on date_end - days.
         """
         if self.date_start and self.date_end:
             self.days = (self.date_end - self.date_start).days
@@ -55,7 +60,6 @@ class Settings(BaseModel):
         elif not self.date_start and not self.date_end:
             self.date_end = datetime.utcnow()
             self.date_start = self.date_end - timedelta(days=self.days)
-
         return self
 
     @field_validator("date_start", "date_end", mode="before")
@@ -70,8 +74,7 @@ class Settings(BaseModel):
 
 
 class Event(BaseModel):
-    """
-    TradingView API Event.
+    """TradingView API Event.
 
     May contain events without actual and forecast values.
     """
@@ -112,9 +115,7 @@ class DataProviderResult(BaseModel):
 
 
 class Indicators(BaseModel):
-    """
-    Container to store indicators and metrics to easy sync with existing records.
-    """
+    """Container to store indicators and metrics to easy sync with records, stored in database."""
 
     meta: Dict[str, Indicator]
     data: Dict[Tuple[str, datetime], IndicatorData]

@@ -4,7 +4,7 @@
 .DEFAULT: help 			 # Running Make will run the help target
 
 PY = .venv/bin/python
-PYTHON = $(PY) -m
+PYTHON = @$(PY) -m
 APP = stats
 
 # -------------------------------------------------------------------------------------------------
