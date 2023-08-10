@@ -63,9 +63,8 @@ class Storage(DataProvider):
             Do not sync data from providers, by default False
 
         """
-
         if not no_sync:
-            log.info(f"Querying data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}")
+            log.info(f"Sync data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}")
             # get only dates that are not in storage
             dates = await self.dates_to_sync(date_start, date_end)
             tasks = [self.sync(*date, countries=countries) for date in dates]
