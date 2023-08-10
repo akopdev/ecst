@@ -26,7 +26,17 @@ class Storage(DataProvider):
             await conn.run_sync(BaseModel.metadata.create_all)
 
     async def list(self, countries: List[Country] = []) -> ListResult:
-        """List of all available indicators."""
+        """List of all available indicators.
+
+        Parameters
+        ----------
+        countries : List[Country], optional
+            List of countries to query, by default []
+
+        Returns
+        -------
+        ListResult: List of indicators.
+        """
         async with self.session() as session:
             async with session.begin():
                 q = select(Indicator)
@@ -105,7 +115,16 @@ class Storage(DataProvider):
         """
         Calculate the dates to sync with remote providers.
 
-        Returns a list of non-overlapping ranges.
+        Parameters
+        ----------
+        date_start : datetime
+            Start date of the period.
+        date_end : datetime
+            End date of the period.
+
+        Returns
+        -------
+        List[Tuple[datetime, datetime]] : List of non-overlapping ranges.
         """
         # get min and max dates from Storage
         async with self.session() as session:
@@ -133,7 +152,16 @@ class Storage(DataProvider):
         """
         Calculate the overlap between the two ranges of dates.
 
-        Returns a list of non-overlapping ranges.
+        Parameters
+        ----------
+        existing_dates : Tuple[datetime, datetime]
+            The existing dates in the storage.
+        requested_dates : Tuple[datetime, datetime]
+            The requested dates to sync.
+
+        Returns
+        -------
+        List[Tuple[datetime, datetime]] : List of non-overlapping ranges.
         """
         overlap_start = max(existing_dates[0], requested_dates[0])
         overlap_end = min(existing_dates[1], requested_dates[1])
@@ -162,7 +190,18 @@ class Storage(DataProvider):
         """
         Sync data storage with remote providers.
 
-        Returns a list of tickers that were updated.
+        Parameters
+        ----------
+        date_start : datetime
+            Start date of the period.
+        date_end : datetime
+            End date of the period.
+        countries : List[Country], optional
+            List of countries to query, by default []
+
+        Returns
+        -------
+        List[str] : List of tickers that were updated.
         """
         # fetch remote events
         events = await self.fetch(date_start, date_end, countries)
@@ -211,7 +250,15 @@ class Storage(DataProvider):
             - Indicator: meta data about particular indicator (always unique)
             - IndicatorData: forecast and actual data for particular date (not unique)
 
-        Returns dictionary that contains meta data and referenced metrics.
+        Parameters
+        ----------
+        events: List[Event]
+            List of events to transform
+
+        Returns
+        -------
+        Dict[str, Indicator]: meta data about Indicators
+        Dict[Tuple[str, datetime], IndicatorData]: forecast and actual data for particular date
         """
         result = {"meta": {}, "data": defaultdict(IndicatorData)}
         for event in events:

@@ -28,6 +28,22 @@ class DataProvider:
         date_end: datetime,
         countries: List[Country] = [],
     ) -> List[Event]:
+        """Fetch list of event from TradingView API that will include indicator metrics.
+
+        Parameters
+        ----------
+        date_start : datetime
+            Start date.
+        date_end : datetime
+            End date.
+        countries : List[Country], optional
+            List of countries to fetch data for, by default [].
+
+        Returns
+        -------
+        List[Event]
+            List of events.
+        """
         log.info(
             "Fetch data from provider for period:"
             f"`{date_start:%d.%m.%Y %H:%I:%S} to {date_end:%d.%m.%Y %H:%I:%S}`"
