@@ -30,6 +30,8 @@ class Settings(BaseModel):
     days: int = Field(default=1, ge=0)
     format: OutputFormat = Field(default=OutputFormat.TEXT)
     countries: Optional[List[Country]] = []
+    tickers: Optional[List[str]] = []
+    no_sync: bool = False
 
     @model_validator(mode="before")
     def parse_countries(values: dict):

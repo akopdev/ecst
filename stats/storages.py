@@ -40,19 +40,36 @@ class Storage(DataProvider):
         date_start: datetime,
         date_end: datetime,
         countries: List[Country] = [],
+        tickers: List[str] = [],
+        no_sync: bool = False,
     ) -> QueryResult:
         """
         Query data storage for events in period.
 
         Fetch indicators from providers, transform them to models
         and merge with existing data in storage.
-        """
-        log.info(f"Querying data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}")
 
-        # get only dates that are not in storage
-        dates = await self.dates_to_sync(date_start, date_end)
-        tasks = [self.sync(*date, countries=countries) for date in dates]
-        await asyncio.gather(*tasks)
+        Parameters
+        ----------
+        date_start : datetime
+            Start date of the period.
+        date_end : datetime
+            End date of the period.
+        countries : List[Country], optional
+            List of countries to query, by default []
+        tickers : List[str], optional
+            List of tickers to query, by default []
+        no_sync : bool, optional
+            Do not sync data from providers, by default False
+
+        """
+
+        if not no_sync:
+            log.info(f"Querying data for {date_start:%d.%m.%Y %H:%I:%S} - {date_end:%d.%m.%Y %H:%I:%S}")
+            # get only dates that are not in storage
+            dates = await self.dates_to_sync(date_start, date_end)
+            tasks = [self.sync(*date, countries=countries) for date in dates]
+            await asyncio.gather(*tasks)
 
         # query data from Storage
         async with self.session() as session:
@@ -66,6 +83,9 @@ class Storage(DataProvider):
                 )
                 if countries:
                     q = q.join(Indicator).filter(Indicator.country.in_(countries))
+
+                if tickers:
+                    q = q.filter(IndicatorData.ticker.in_(tickers))
 
                 result = await session.execute(q)
                 return QueryResult(

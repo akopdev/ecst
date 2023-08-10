@@ -16,7 +16,7 @@ def main():
     # Global arguments
     parser.add_argument(
         "--storage",
-        help="Database connection string. " "Support environment variable `STATS_STORAGE`",
+        help="Database connection string. Support environment variable `STATS_STORAGE`",
     )
     parser.add_argument(
         "--version",
@@ -35,6 +35,18 @@ def main():
         help="Get indicator data for specified date range",
         argument_default=argparse.SUPPRESS,
     )
+    query_parser.add_argument(
+        "--tickers",
+        help="List of indicators to include into result",
+        nargs="+"
+    )
+
+    query_parser.add_argument(
+        "--no-sync",
+        help="Don't sync data with provider",
+        action="store_true",
+    )
+
     query_parser.add_argument(
         "--date-start",
         help="Fetch data starting from this date (2023-01-19, 2023-01-19T10:30:00)",

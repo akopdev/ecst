@@ -22,6 +22,8 @@ async def query_indicators(settings: Settings):
             date_start=settings.date_start,
             date_end=settings.date_end,
             countries=settings.countries,
+            tickers=settings.tickers,
+            no_sync=settings.no_sync,
         )
         format(result, settings.format)
     except Exception as e:
