@@ -5,8 +5,8 @@ from typing import Dict, List, Tuple
 import pytest
 from aioresponses import aioresponses
 
-from stats.schemas import Event
-from stats.storages import Storage
+from ecst.schemas import Event
+from ecst.storages import Storage
 
 sample_event = {
     "id": "324884",

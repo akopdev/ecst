@@ -4,8 +4,8 @@ from typing import List
 import pytest
 import pytest_asyncio
 
-from stats.models import Indicator, IndicatorData
-from stats.storages import Storage
+from ecst.models import Indicator, IndicatorData
+from ecst.storages import Storage
 
 
 @pytest.fixture(scope="session")

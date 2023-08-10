@@ -23,4 +23,4 @@ RUN rm -rf /wheels
 
 WORKDIR /app
 
-CMD ["stats"]
+CMD ["ecst"]

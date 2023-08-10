@@ -3,7 +3,7 @@ from typing import Dict
 
 import pytest
 
-from stats.schemas import Settings
+from ecst.schemas import Settings
 
 # Sample test cases for Settings schema
 parse_date_data = [

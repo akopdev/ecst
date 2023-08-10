@@ -6,7 +6,7 @@ from pydantic import (BaseModel, ConfigDict, Field, PostgresDsn,
                       UrlConstraints, field_validator, model_validator)
 from pydantic_core import Url
 
-from stats.models import Indicator, IndicatorData
+from ecst.models import Indicator, IndicatorData
 
 from .enums import Country, Currency, OutputFormat, Period
 
@@ -23,7 +23,7 @@ class Settings(BaseModel):
     """Validates CLI arguments."""
 
     storage: Optional[PostgresDsn | SQLiteDsn] = Field(
-        default=os.environ.get("STATS_STORAGE", "sqlite+aiosqlite:///:memory:")
+        default=os.environ.get("ECST_STORAGE", "sqlite+aiosqlite:///:memory:")
     )
     date_start: Optional[datetime] = None
     date_end: Optional[datetime] = None

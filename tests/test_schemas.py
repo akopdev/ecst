@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from stats.schemas import Event
+from ecst.schemas import Event
 
 
 def test_fix_ticker():

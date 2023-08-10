@@ -3,9 +3,9 @@ from datetime import datetime
 
 import pytest
 from aioresponses import aioresponses
-from stats.providers import DataProvider
+from ecst.providers import DataProvider
 
-from stats.schemas import Event
+from ecst.schemas import Event
 
 
 

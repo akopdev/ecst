@@ -1,9 +1,9 @@
 from setuptools import find_packages, setup
 
-from stats import __version__
+from ecst import __version__
 
 setup(
-    name="stats",
+    name="ecst",
     version=__version__,
     packages=find_packages(),
     install_requires=["aiohttp", "pydantic>=2.0.0", "sqlalchemy[asyncio]", "aiosqlite"],
@@ -22,5 +22,5 @@ setup(
             "aioresponses",
         ],
     },
-    entry_points={"console_scripts": ["stats=stats.__main__:main"]},
+    entry_points={"console_scripts": ["ecst=ecst.__main__:main"]},
 )

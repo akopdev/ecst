@@ -5,7 +5,7 @@
 
 PY = .venv/bin/python
 PYTHON = @$(PY) -m
-APP = stats
+APP = ecst
 
 # -------------------------------------------------------------------------------------------------
 # help: @ List available tasks on this project

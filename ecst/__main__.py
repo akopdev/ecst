@@ -11,12 +11,13 @@ from .schemas import Settings
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Economic indicators", argument_default=argparse.SUPPRESS
+        description="Display, customize, and manage multiple economic calendars",
+        argument_default=argparse.SUPPRESS,
     )
     # Global arguments
     parser.add_argument(
         "--storage",
-        help="Database connection string. Support environment variable `STATS_STORAGE`",
+        help="Database connection string. Support environment variable `ECST_STORAGE`",
     )
     parser.add_argument(
         "--version",
@@ -36,9 +37,7 @@ def main():
         argument_default=argparse.SUPPRESS,
     )
     query_parser.add_argument(
-        "--tickers",
-        help="List of indicators to include into result",
-        nargs="+"
+        "--tickers", help="List of indicators to include into result", nargs="+"
     )
 
     query_parser.add_argument(
